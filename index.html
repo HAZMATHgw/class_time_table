@@ -84,7 +84,11 @@ body{
 .cal-day .dnum{font-weight:700;color:var(--ink-soft);font-size:10.5px;margin-bottom:2px;}
 .cal-day.today .dnum{color:var(--pin-red);}
 .cal-chip{display:block;border-radius:4px;padding:1px 4px;margin-bottom:2px;font-size:9px;font-weight:700;color:#2c2c2c;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cal-chip.contest{background:var(--butter) !important;color:#4a3a00;}
 .cal-more{font-size:9px;color:var(--ink-soft);cursor:default;}
+.cal-legend{display:flex;gap:14px;justify-content:center;font-size:11px;color:var(--ink-soft);margin:-10px 0 14px;}
+.cal-legend span{display:inline-flex;align-items:center;gap:4px;}
+.cal-day.just-saved{outline:3px solid var(--pin-red);outline-offset:1px;transition:outline-color .6s ease;}
 
 .eval-table-head{display:flex;justify-content:flex-end;margin-bottom:10px;}
 .add-eval-btn{background:var(--ink);color:#fff;border:none;border-radius:7px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
@@ -227,6 +231,7 @@ body{
       <span id="calLabel"></span>
       <button onclick="shiftMonth(1)">▶</button>
     </div>
+    <div class="cal-legend"><span>📚 수행평가</span><span>🏆 대회/공모전</span></div>
     <div class="cal-grid" id="calGrid"></div>
 
     <div class="eval-table-head"><button class="add-eval-btn" onclick="openEvalForm()">＋ 수행평가 추가</button></div>
@@ -289,6 +294,20 @@ body{
     <button class="close-x" onclick="closeMini()">✕</button>
     <h2 id="miniTitle"></h2>
     <div class="mini-grid" id="miniGrid"></div>
+  </div>
+</div>
+
+<!-- 대회/공모전 상세 모달 -->
+<div class="overlay" id="newsOverlay">
+  <div class="note-card">
+    <button class="close-x" onclick="closeNewsDetail()">✕</button>
+    <h2 id="newsDetailTitle">🏆</h2>
+    <div class="sub" id="newsDetailMeta"></div>
+    <div class="field"><div class="hint" id="newsDetailDesc" style="white-space:pre-wrap;"></div></div>
+    <div class="modal-actions">
+      <button class="btn btn-close" onclick="closeNewsDetail()">닫기</button>
+      <button class="btn btn-delete" onclick="deleteNewsDetail()">삭제</button>
+    </div>
   </div>
 </div>
 
@@ -636,7 +655,7 @@ async function saveNote(){
       renderEntriesList();
       refreshPins();
       renderEvalTable();
-      renderCalendar();
+      if(entry.deadline) jumpCalendarTo(entry.deadline, true); else renderCalendar();
     } else {
       statusEl.textContent = '저장 실패: ' + error.message;
     }
@@ -655,7 +674,7 @@ async function saveNote(){
     renderEntriesList();
     refreshPins();
     renderEvalTable();
-    renderCalendar();
+    if(entry.deadline) jumpCalendarTo(entry.deadline, true); else renderCalendar();
   } else { statusEl.textContent = '저장 실패, 다시 시도해주세요'; }
 }
 
@@ -707,6 +726,20 @@ function shiftMonth(delta){
   calMonth.setMonth(calMonth.getMonth()+delta);
   renderCalendar();
 }
+function jumpCalendarTo(dateStr, flash){
+  if(!dateStr) return;
+  const target = new Date(dateStr+'T00:00:00');
+  calMonth = new Date(target.getFullYear(), target.getMonth(), 1);
+  renderCalendar();
+  if(flash){
+    const cellEl = document.querySelector('.cal-day[data-date="'+dateStr+'"]');
+    if(cellEl){
+      cellEl.classList.add('just-saved');
+      cellEl.scrollIntoView({behavior:'smooth', block:'center'});
+      setTimeout(()=>cellEl.classList.remove('just-saved'), 1800);
+    }
+  }
+}
 function renderCalendar(){
   const grid = document.getElementById('calGrid');
   const label = document.getElementById('calLabel');
@@ -723,17 +756,55 @@ function renderCalendar(){
   for(let i=0;i<firstDow;i++) html += '<div class="cal-day blank"></div>';
   for(let day=1; day<=daysInMonth; day++){
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    const dueToday = evaluationList.filter(e=>e.deadline === dateStr);
+    const evalsToday = evaluationList.filter(e=>e.deadline === dateStr);
+    const newsToday = newsList.filter(n=>n.deadline === dateStr);
     const isToday = dateStr === todayStr;
-    let cell = `<div class="cal-day${isToday?' today':''}"><div class="dnum">${day}</div>`;
-    dueToday.slice(0,2).forEach(e=>{
-      cell += `<span class="cal-chip" style="background:${colorFor(e.subject)}" onclick="openEvalForm({id:${e.id}})" title="${escapeHtml(e.subject)} ${escapeHtml(e.cls)}반">${escapeHtml(e.subject)}(${escapeHtml(e.cls)})</span>`;
+    let cell = `<div class="cal-day${isToday?' today':''}" data-date="${dateStr}"><div class="dnum">${day}</div>`;
+    let shown = 0;
+    evalsToday.forEach(e=>{
+      if(shown >= 3) return;
+      cell += `<span class="cal-chip" style="background:${colorFor(e.subject)}" onclick="openEvalForm({id:${e.id}})" title="📚 ${escapeHtml(e.subject)} ${escapeHtml(e.cls)}반">📚 ${escapeHtml(e.subject)}(${escapeHtml(e.cls)})</span>`;
+      shown++;
     });
-    if(dueToday.length > 2) cell += `<span class="cal-more">+${dueToday.length-2}개 더</span>`;
+    newsToday.forEach(n=>{
+      if(shown >= 3) return;
+      cell += `<span class="cal-chip contest" onclick="openNewsDetail(${JSON.stringify(String(n.id))})" title="🏆 ${escapeHtml(n.title)}">🏆 ${escapeHtml(n.title)}</span>`;
+      shown++;
+    });
+    const total = evalsToday.length + newsToday.length;
+    if(total > shown) cell += `<span class="cal-more">+${total-shown}개 더</span>`;
     cell += '</div>';
     html += cell;
   }
   grid.innerHTML = html;
+}
+
+function openNewsDetail(id){
+  const n = newsList.find(x=>String(x.id) === String(id));
+  if(!n) return;
+  document.getElementById('newsDetailTitle').textContent = '🏆 ' + n.title;
+  document.getElementById('newsDetailMeta').textContent = n.deadline ? `마감일: ${n.deadline}` : '마감일 없음(상시)';
+  document.getElementById('newsDetailDesc').textContent = n.desc || '(설명 없음)';
+  document.getElementById('newsOverlay').dataset.activeId = id;
+  document.getElementById('newsOverlay').classList.add('open');
+}
+function closeNewsDetail(){
+  document.getElementById('newsOverlay').classList.remove('open');
+}
+async function deleteNewsDetail(){
+  const id = document.getElementById('newsOverlay').dataset.activeId;
+  if(!id) return;
+  if(!confirm('이 소식을 삭제할까요?')) return;
+  if(sb){
+    const { error } = await sb.from('news').delete().eq('id', id);
+    if(error){ alert('삭제 실패: '+error.message); return; }
+  } else {
+    newsList = newsList.filter(n=>String(n.id) !== String(id));
+    lsSet('news', newsList);
+  }
+  await loadNews();
+  renderCalendar();
+  closeNewsDetail();
 }
 
 
@@ -896,6 +967,7 @@ async function addNews(){
       document.getElementById('newsDeadline').value='';
       document.getElementById('newsDesc').value='';
       await loadNews();
+      if(deadline) jumpCalendarTo(deadline, true);
     } else {
       status.textContent = '등록 실패: ' + error.message;
     }
@@ -911,6 +983,8 @@ async function addNews(){
     document.getElementById('newsDeadline').value='';
     document.getElementById('newsDesc').value='';
     renderNews();
+    renderCalendar();
+    if(deadline) jumpCalendarTo(deadline, true);
   } else { status.textContent = '등록 실패'; }
 }
 
@@ -920,11 +994,13 @@ async function loadNews(){
     if(!error && data){
       newsList = data.map(r=>({ id:r.id, title:r.title, deadline:r.deadline, desc:r.description, createdAt:r.created_at }));
       renderNews();
+      renderCalendar();
       return;
     }
   }
   newsList = lsGet('news') || [];
   renderNews();
+  renderCalendar();
 }
 
 // ---- init ----
