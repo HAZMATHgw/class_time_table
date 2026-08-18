@@ -67,9 +67,49 @@ body{
 .cell:hover{transform:translateY(-2px) rotate(-0.4deg); box-shadow:0 6px 12px rgba(0,0,0,0.2);}
 .cell.empty{background:repeating-linear-gradient(45deg, rgba(0,0,0,0.02) 0 6px, transparent 6px 12px);box-shadow:none;cursor:default;}
 .cell .room{display:block;font-size:10px;font-weight:600;opacity:0.75;margin-top:2px;}
-.cell .pin{position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:var(--pin-red);border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,0.35);display:none;}
+.cell .cls-badge{display:inline-block;font-size:9.5px;font-weight:800;background:rgba(255,255,255,0.6);border-radius:4px;padding:0 4px;margin-left:3px;vertical-align:middle;}
+.cell .pin{position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:var(--ink-soft);border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,0.35);display:none;}
 .cell.has-note .pin{display:block;}
+.cell.has-note.pin-urgent .pin{background:var(--pin-red);}
 .cell .deadline-chip{display:block;margin-top:4px;font-size:10px;font-weight:700;color:rgba(0,0,0,0.55);}
+
+/* ---- 수행평가 정리: 달력 + 스프레드시트 ---- */
+.cal-header{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:10px;}
+.cal-header button{background:#eee6d3;border:none;border-radius:6px;width:30px;height:30px;font-size:13px;cursor:pointer;color:var(--ink);}
+.cal-header span{font-weight:800;font-size:14px;color:var(--ink);min-width:110px;text-align:center;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:20px;}
+.cal-dow{text-align:center;font-size:11px;font-weight:800;color:var(--ink-soft);padding:4px 0;}
+.cal-day{min-height:58px;background:#fffef9;border:1px solid #ece3ca;border-radius:6px;padding:4px;font-size:10px;overflow:hidden;}
+.cal-day.blank{background:transparent;border:none;}
+.cal-day .dnum{font-weight:700;color:var(--ink-soft);font-size:10.5px;margin-bottom:2px;}
+.cal-day.today .dnum{color:var(--pin-red);}
+.cal-chip{display:block;border-radius:4px;padding:1px 4px;margin-bottom:2px;font-size:9px;font-weight:700;color:#2c2c2c;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cal-more{font-size:9px;color:var(--ink-soft);cursor:default;}
+
+.eval-table-head{display:flex;justify-content:flex-end;margin-bottom:10px;}
+.add-eval-btn{background:var(--ink);color:#fff;border:none;border-radius:7px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.add-eval-btn:hover{background:#16283f;}
+.eval-table{width:100%;border-collapse:collapse;font-size:12px;}
+.eval-table th{text-align:left;font-size:11px;color:var(--ink-soft);border-bottom:2px solid #e2d7bb;padding:6px 8px;white-space:nowrap;}
+.eval-table td{padding:8px;border-bottom:1px solid #ece3ca;vertical-align:top;}
+.eval-table tr:hover td{background:#fffef2;}
+.eval-table .et-subj{font-weight:700;color:var(--ink);white-space:nowrap;}
+.eval-table .et-cls{font-size:10.5px;font-weight:800;background:#eee6d3;border-radius:4px;padding:1px 6px;white-space:nowrap;}
+.eval-table .et-content{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.eval-table .et-actions{white-space:nowrap;}
+.eval-table .et-actions button{background:none;border:none;cursor:pointer;font-size:13px;padding:2px 5px;}
+.eval-table-empty{font-size:12px;color:#a39a80;padding:14px 4px;text-align:center;}
+.eval-scroll{overflow-x:auto;}
+
+.entries-list{margin-bottom:14px;}
+.entries-list .et-row{display:flex;align-items:center;gap:8px;background:#fffef9;border:1px solid #ece3ca;border-radius:6px;padding:7px 10px;margin-bottom:6px;font-size:12px;cursor:pointer;}
+.entries-list .et-row:hover{background:#fdf8ec;}
+.entries-list .et-row .et-main{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.entries-list .et-row .et-date{font-size:10.5px;color:var(--ink-soft);white-space:nowrap;}
+.entries-list .et-row .et-del{background:none;border:none;color:var(--pin-red);cursor:pointer;font-size:13px;padding:2px 4px;}
+.entries-empty{font-size:11.5px;color:#a39a80;margin-bottom:10px;}
+.btn-delete{background:#f3d7d1;color:#8a2f22;flex:0 0 auto;}
+.btn-delete:hover{background:#eec2b9;}
 
 /* 과목 색상은 이제 JS에서 hsl()로 동적 생성해요 (과목 수만큼 색상환을 균등 분할) */
 
@@ -179,6 +219,21 @@ body{
   </div>
 
   <div class="panel">
+    <h2>수행평가 정리 📋</h2>
+    <div class="desc">과목마다 반이 여러 개라 마감일이 달라요(예: 논리적글쓰기 X/Y/Z/W). 달력에서 반별 마감일을 한눈에 보고, 표에서 ＋ 버튼으로 새 항목을 추가하세요.</div>
+
+    <div class="cal-header">
+      <button onclick="shiftMonth(-1)">◀</button>
+      <span id="calLabel"></span>
+      <button onclick="shiftMonth(1)">▶</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+
+    <div class="eval-table-head"><button class="add-eval-btn" onclick="openEvalForm()">＋ 수행평가 추가</button></div>
+    <div class="eval-scroll"><table class="eval-table" id="evalTable"></table></div>
+  </div>
+
+  <div class="panel">
     <h2>오늘의 소식 📣</h2>
     <div class="desc">리로스쿨 자동 연동은 지원하지 않아요 — 대신 대회·공모전 정보를 직접 등록해서 함께 볼 수 있어요.</div>
     <div class="news-form">
@@ -200,8 +255,18 @@ body{
 <div class="overlay" id="overlay">
   <div class="note-card">
     <button class="close-x" onclick="closeModal()">✕</button>
-    <h2 id="modalSubject"></h2>
+    <h2 id="modalSubject" style="display:none;"></h2>
+    <div class="field" id="pickFields" style="display:none;">
+      <label>과목</label>
+      <select id="pickSubject" onchange="onPickSubjectChange()"></select>
+      <div style="height:8px;"></div>
+      <label>분반</label>
+      <select id="pickCls" onchange="onPickClsChange()"></select>
+    </div>
     <div class="sub" id="modalDaytime"></div>
+
+    <div class="entries-list" id="entriesList"></div>
+
     <div class="field"><label>수행평가 내용</label><textarea id="fContent" placeholder="예: 사회 현상 분석 보고서 작성 및 발표"></textarea></div>
     <div class="field"><label>제출 기한 / 평가일</label><input id="fDeadline" type="date" /></div>
     <div class="field"><label>관련 검색어</label><input id="fKeywords" placeholder="쉼표로 구분 (예: 통계 분석, 설문조사 설계)" /><div class="hint">산출물형 수행평가 준비에 도움될 검색어를 적어주세요</div></div>
@@ -210,6 +275,7 @@ body{
     <div id="aiIdeaBox" style="display:none"></div>
     <div class="modal-actions">
       <button class="btn btn-close" onclick="closeModal()">닫기</button>
+      <button class="btn btn-delete" id="deleteEvalBtn" onclick="deleteNote()" style="display:none;">삭제</button>
       <button class="btn btn-save" onclick="saveNote()">저장</button>
     </div>
     <div class="save-status" id="modalStatus"></div>
@@ -269,10 +335,17 @@ function colorFor(subject){
   return subjectColorMap[subject] || 'hsl(0, 0%, 85%)';
 }
 
-let evaluations = {};   // { subjectFullName: {content, deadline, keywords, updatedAt} }
+let evaluationList = [];   // [{id, subject, cls, content, deadline, keywords, updatedAt}, ...] — 과목+분반마다 여러 개 가능
 let newsList = [];
 let activeSubject = null;
+let activeCls = null;
+let editingEvalId = null;  // null = 새 항목 추가, 값 있으면 그 id를 수정
 let currentStudent = null;
+let calMonth = new Date(); calMonth.setDate(1);
+
+function evalsFor(subject, cls){
+  return evaluationList.filter(e => e.subject === subject && e.cls === cls);
+}
 
 function studentByName(name){
   return SCHEDULE_DATA.students.find(s=>s.name === name);
@@ -333,8 +406,9 @@ function buildGrid(){
       } else {
         cell.className = 'cell';
         cell.style.background = colorFor(info.subject);
+        const clsBadge = (info.cls && info.cls !== '전체') ? '<span class="cls-badge">'+info.cls+'반</span>' : '';
         const teacherLine = info.teacher ? '<span class="room">'+info.teacher+(info.room?' · '+info.room:'')+'</span>' : (info.room ? '<span class="room">'+info.room+'</span>' : '');
-        cell.innerHTML = info.displaySubject + teacherLine + '<span class="pin"></span>';
+        cell.innerHTML = info.displaySubject + clsBadge + teacherLine + '<span class="pin"></span>';
         cell.onclick = () => openModal(key, info);
       }
       grid.appendChild(cell);
@@ -347,37 +421,167 @@ function refreshPins(){
   if(!currentStudent) return;
   Object.keys(currentStudent.grid).forEach(key=>{
     const info = currentStudent.grid[key];
-    const data = evaluations[info.subject];
+    const entries = info.cls ? evalsFor(info.subject, info.cls) : [];
+    const withContent = entries.filter(e=>e.content);
     const cellEl = document.querySelector('#grid .cell[data-key="'+key+'"]');
     if(!cellEl) return;
-    if(data && data.content){
-      cellEl.classList.add('has-note');
-      let chip = cellEl.querySelector('.deadline-chip');
-      if(!chip && data.deadline){ chip = document.createElement('span'); chip.className='deadline-chip'; cellEl.appendChild(chip); }
-      if(chip) chip.textContent = data.deadline ? '📅 '+data.deadline : '';
+
+    let chip = cellEl.querySelector('.deadline-chip');
+
+    if(withContent.length === 0){
+      cellEl.classList.remove('has-note','pin-urgent');
+      if(chip) chip.remove();
+      return;
+    }
+
+    const deadlines = withContent.map(e=>e.deadline).filter(Boolean).sort();
+    const nearest = deadlines.length ? deadlines[0] : null;
+    const daysLeft = nearest ? daysUntil(nearest) : null;
+    const urgent = daysLeft !== null && daysLeft <= 7;
+
+    cellEl.classList.add('has-note');
+    cellEl.classList.toggle('pin-urgent', urgent);
+
+    if(nearest){
+      if(!chip){ chip = document.createElement('span'); chip.className='deadline-chip'; cellEl.appendChild(chip); }
+      chip.textContent = '📅 ' + nearest;
+    } else if(chip){
+      chip.remove();
     }
   });
 }
 
 function openModal(key, info){
-  activeSubject = info.subject;
   const [d,p] = key.split('-');
-  document.getElementById('modalSubject').textContent = info.displaySubject;
+  document.getElementById('modalSubject').style.display = 'block';
+  document.getElementById('modalSubject').textContent = info.displaySubject + (info.cls ? ` (${info.cls}반)` : '');
+  document.getElementById('pickFields').style.display = 'none';
   const teacherPart = info.teacher ? ` · ${info.teacher} 선생님` : '';
   const roomPart = info.room ? ` · ${info.room}` : '';
   document.getElementById('modalDaytime').textContent = `${d}요일 ${p}교시${teacherPart}${roomPart}`;
-  const data = evaluations[info.subject] || {};
-  document.getElementById('fContent').value = data.content || '';
-  document.getElementById('fDeadline').value = data.deadline || '';
-  document.getElementById('fKeywords').value = data.keywords || '';
-  document.getElementById('modalStatus').textContent = '';
-  document.getElementById('modalMeta').textContent = data.updatedAt ? `마지막 수정: ${new Date(data.updatedAt).toLocaleDateString('ko-KR')}` : '';
-  document.getElementById('aiIdeaBox').style.display = 'none';
-  document.getElementById('aiIdeaBox').innerHTML = '';
+  activeSubject = info.subject;
+  activeCls = info.cls || null;
+  prepareModalForm();
   renderClassmateBlock(info);
   document.getElementById('overlay').classList.add('open');
 }
-function closeModal(){ document.getElementById('overlay').classList.remove('open'); activeSubject = null; }
+
+function openEvalForm(prefill){
+  document.getElementById('modalSubject').style.display = 'none';
+  document.getElementById('pickFields').style.display = 'block';
+  document.getElementById('modalDaytime').textContent = '과목과 분반을 고르고 수행평가를 추가하세요.';
+
+  const subjSel = document.getElementById('pickSubject');
+  subjSel.innerHTML = SCHEDULE_DATA.subjects.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+
+  let subject, cls, entryId = null;
+  if(prefill && prefill.id != null){
+    const found = evaluationList.find(e=>e.id === prefill.id);
+    if(found){ subject = found.subject; cls = found.cls; entryId = found.id; }
+  } else if(prefill && prefill.subject){
+    subject = prefill.subject; cls = prefill.cls;
+  }
+  if(!subject) subject = SCHEDULE_DATA.subjects[0];
+  subjSel.value = subject;
+  onPickSubjectChange(cls);
+
+  activeSubject = subject;
+  activeCls = document.getElementById('pickCls').value;
+  prepareModalForm();
+  renderClassmateBlock({ subject: activeSubject, cls: activeCls });
+  document.getElementById('overlay').classList.add('open');
+
+  if(entryId != null){
+    const entry = evaluationList.find(e=>e.id === entryId);
+    if(entry) loadEntryIntoForm(entry);
+  }
+}
+
+function onPickSubjectChange(preferCls){
+  const subject = document.getElementById('pickSubject').value;
+  const classSel = document.getElementById('pickCls');
+  const classes = SCHEDULE_DATA.subjectClasses[subject] || [];
+  classSel.innerHTML = classes.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}반</option>`).join('');
+  if(preferCls && classes.includes(preferCls)) classSel.value = preferCls;
+  onPickClsChange();
+}
+function onPickClsChange(){
+  activeSubject = document.getElementById('pickSubject').value;
+  activeCls = document.getElementById('pickCls').value;
+  editingEvalId = null;
+  clearForm();
+  renderEntriesList();
+  renderClassmateBlock({ subject: activeSubject, cls: activeCls });
+}
+
+function prepareModalForm(){
+  editingEvalId = null;
+  clearForm();
+  renderEntriesList();
+}
+function clearForm(){
+  document.getElementById('fContent').value = '';
+  document.getElementById('fDeadline').value = '';
+  document.getElementById('fKeywords').value = '';
+  document.getElementById('modalStatus').textContent = '';
+  document.getElementById('modalMeta').textContent = '';
+  document.getElementById('deleteEvalBtn').style.display = 'none';
+  document.getElementById('aiIdeaBox').style.display = 'none';
+  document.getElementById('aiIdeaBox').innerHTML = '';
+}
+function loadEntryIntoForm(entry){
+  editingEvalId = entry.id;
+  document.getElementById('fContent').value = entry.content || '';
+  document.getElementById('fDeadline').value = entry.deadline || '';
+  document.getElementById('fKeywords').value = entry.keywords || '';
+  document.getElementById('modalMeta').textContent = entry.updatedAt ? `마지막 수정: ${new Date(entry.updatedAt).toLocaleDateString('ko-KR')}` : '';
+  document.getElementById('deleteEvalBtn').style.display = 'block';
+  document.getElementById('modalStatus').textContent = '';
+}
+
+function renderEntriesList(){
+  const box = document.getElementById('entriesList');
+  const entries = evalsFor(activeSubject, activeCls).slice().sort((a,b)=>(a.deadline||'9999')<(b.deadline||'9999')?-1:1);
+  if(entries.length === 0){
+    box.innerHTML = '<div class="entries-empty">등록된 수행평가가 아직 없어요. 아래에 첫 항목을 입력하고 저장하세요.</div>';
+    return;
+  }
+  box.innerHTML = '<div class="hint" style="margin-bottom:6px;">📋 등록된 항목 (클릭하면 수정)</div>' + entries.map(e=>{
+    const preview = (e.content || '(내용 없음)').slice(0,24);
+    return `<div class="et-row" onclick="loadEntryIntoForm(${JSON.stringify(e).replace(/"/g,'&quot;')})">
+      <span class="et-main">${escapeHtml(preview)}</span>
+      <span class="et-date">${e.deadline ? '📅 '+e.deadline : ''}</span>
+      <button class="et-del" onclick="event.stopPropagation(); quickDelete(${e.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+async function quickDelete(id){
+  if(!confirm('이 수행평가를 삭제할까요?')) return;
+  if(sb){
+    const { error } = await sb.from('evaluations').delete().eq('id', id);
+    if(error){ alert('삭제 실패: '+error.message); return; }
+  } else {
+    evaluationList = evaluationList.filter(e=>e.id !== id);
+    lsSet('evaluations', evaluationList);
+  }
+  await loadEvaluations();
+  renderEntriesList();
+  refreshPins();
+  renderEvalTable();
+  renderCalendar();
+}
+
+async function deleteNote(){
+  if(editingEvalId == null) return;
+  await quickDelete(editingEvalId);
+  clearForm();
+}
+
+function closeModal(){
+  document.getElementById('overlay').classList.remove('open');
+  activeSubject = null; activeCls = null; editingEvalId = null;
+}
 
 function renderClassmateBlock(info){
   const block = document.getElementById('classmateBlock');
@@ -404,8 +608,10 @@ function lsGet(key){ try{ const v = localStorage.getItem(key); return v?JSON.par
 function lsSet(key, value){ try{ localStorage.setItem(key, JSON.stringify(value)); return true; }catch(e){ return false; } }
 
 async function saveNote(){
-  if(!activeSubject) return;
+  if(!activeSubject || !activeCls) return;
   const entry = {
+    subject: activeSubject,
+    cls: activeCls,
     content: document.getElementById('fContent').value.trim(),
     deadline: document.getElementById('fDeadline').value || null,
     keywords: document.getElementById('fKeywords').value.trim()
@@ -414,30 +620,42 @@ async function saveNote(){
   statusEl.textContent = '저장 중...';
 
   if(sb){
-    const { error } = await sb.from('evaluations').upsert({
-      subject: activeSubject,
-      content: entry.content,
-      deadline: entry.deadline,
-      keywords: entry.keywords,
-      updated_at: new Date().toISOString()
-    });
+    let error;
+    if(editingEvalId != null){
+      ({ error } = await sb.from('evaluations').update({
+        content: entry.content, deadline: entry.deadline, keywords: entry.keywords, updated_at: new Date().toISOString()
+      }).eq('id', editingEvalId));
+    } else {
+      ({ error } = await sb.from('evaluations').insert({
+        subject: entry.subject, cls: entry.cls, content: entry.content, deadline: entry.deadline, keywords: entry.keywords
+      }));
+    }
     if(!error){
-      evaluations[activeSubject] = { ...entry, updatedAt: new Date().toISOString() };
       statusEl.textContent = '저장됨 ✓ (반 전체와 공유돼요)';
-      document.getElementById('modalMeta').textContent = `마지막 수정: ${new Date().toLocaleDateString('ko-KR')}`;
+      await loadEvaluations();
+      renderEntriesList();
       refreshPins();
+      renderEvalTable();
+      renderCalendar();
     } else {
       statusEl.textContent = '저장 실패: ' + error.message;
     }
     return;
   }
 
-  evaluations[activeSubject] = { ...entry, updatedAt: new Date().toISOString() };
-  const ok = lsSet('evaluations', evaluations);
+  if(editingEvalId != null){
+    const idx = evaluationList.findIndex(e=>e.id === editingEvalId);
+    if(idx >= 0) evaluationList[idx] = { ...evaluationList[idx], ...entry, updatedAt: new Date().toISOString() };
+  } else {
+    evaluationList.push({ ...entry, id: Date.now()+Math.floor(Math.random()*1000), updatedAt: new Date().toISOString() });
+  }
+  const ok = lsSet('evaluations', evaluationList);
   if(ok){
     statusEl.textContent = '저장됨 ✓ (지금은 이 브라우저에만 — Supabase 연동 전)';
-    document.getElementById('modalMeta').textContent = `마지막 수정: ${new Date().toLocaleDateString('ko-KR')}`;
+    renderEntriesList();
     refreshPins();
+    renderEvalTable();
+    renderCalendar();
   } else { statusEl.textContent = '저장 실패, 다시 시도해주세요'; }
 }
 
@@ -445,17 +663,80 @@ async function loadEvaluations(){
   if(sb){
     const { data, error } = await sb.from('evaluations').select('*');
     if(!error && data){
-      evaluations = {};
-      data.forEach(row=>{
-        evaluations[row.subject] = { content: row.content, deadline: row.deadline, keywords: row.keywords, updatedAt: row.updated_at };
-      });
+      evaluationList = data.map(row=>({ id: row.id, subject: row.subject, cls: row.cls, content: row.content, deadline: row.deadline, keywords: row.keywords, updatedAt: row.updated_at }));
       refreshPins();
+      renderEvalTable();
+      renderCalendar();
       return;
     }
   }
-  evaluations = lsGet('evaluations') || {};
+  evaluationList = lsGet('evaluations') || [];
   refreshPins();
+  renderEvalTable();
+  renderCalendar();
 }
+
+// ---- 수행평가 스프레드시트 표 ----
+function renderEvalTable(){
+  const el = document.getElementById('evalTable');
+  if(!el) return;
+  const rows = evaluationList.slice().sort((a,b)=>(a.deadline||'9999')<(b.deadline||'9999')?-1:1);
+  if(rows.length === 0){
+    el.innerHTML = '<tr><td class="eval-table-empty">아직 등록된 수행평가가 없어요. 위 ＋ 버튼으로 추가해보세요.</td></tr>';
+    return;
+  }
+  let html = '<tr><th>과목</th><th>분반</th><th>내용</th><th>마감일</th><th>검색어</th><th></th></tr>';
+  rows.forEach(e=>{
+    html += `<tr>
+      <td class="et-subj">${escapeHtml(e.subject)}</td>
+      <td><span class="et-cls">${escapeHtml(e.cls)}반</span></td>
+      <td class="et-content">${escapeHtml(e.content||'')}</td>
+      <td>${e.deadline||''}</td>
+      <td class="et-content">${escapeHtml(e.keywords||'')}</td>
+      <td class="et-actions">
+        <button onclick="openEvalForm({id:${e.id}})" title="수정">✎</button>
+        <button onclick="quickDelete(${e.id})" title="삭제">✕</button>
+      </td>
+    </tr>`;
+  });
+  el.innerHTML = html;
+}
+
+// ---- 수행평가 달력 ----
+function shiftMonth(delta){
+  calMonth.setMonth(calMonth.getMonth()+delta);
+  renderCalendar();
+}
+function renderCalendar(){
+  const grid = document.getElementById('calGrid');
+  const label = document.getElementById('calLabel');
+  if(!grid || !label) return;
+  const year = calMonth.getFullYear();
+  const month = calMonth.getMonth();
+  label.textContent = `${year}년 ${month+1}월`;
+
+  const firstDow = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const todayStr = new Date().toISOString().slice(0,10);
+
+  let html = ['일','월','화','수','목','금','토'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for(let i=0;i<firstDow;i++) html += '<div class="cal-day blank"></div>';
+  for(let day=1; day<=daysInMonth; day++){
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const dueToday = evaluationList.filter(e=>e.deadline === dateStr);
+    const isToday = dateStr === todayStr;
+    let cell = `<div class="cal-day${isToday?' today':''}"><div class="dnum">${day}</div>`;
+    dueToday.slice(0,2).forEach(e=>{
+      cell += `<span class="cal-chip" style="background:${colorFor(e.subject)}" onclick="openEvalForm({id:${e.id}})" title="${escapeHtml(e.subject)} ${escapeHtml(e.cls)}반">${escapeHtml(e.subject)}(${escapeHtml(e.cls)})</span>`;
+    });
+    if(dueToday.length > 2) cell += `<span class="cal-more">+${dueToday.length-2}개 더</span>`;
+    cell += '</div>';
+    html += cell;
+  }
+  grid.innerHTML = html;
+}
+
+
 
 // ---- AI: keyword / idea suggestions (브라우저 안에서 직접 실행, 가입/키 필요 없음) ----
 function escapeHtml(str){ const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
@@ -559,7 +840,11 @@ function showMini(name){
       const info = stu.grid[key];
       const cell = document.createElement('div');
       if(!info){ cell.className='cell empty'; }
-      else{ cell.className='cell'; cell.style.background=colorFor(info.subject); cell.innerHTML = info.displaySubject + '<span class="room">'+info.room+'</span>'; }
+      else{
+        cell.className='cell'; cell.style.background=colorFor(info.subject);
+        const clsBadge = (info.cls && info.cls !== '전체') ? '<span class="cls-badge">'+info.cls+'반</span>' : '';
+        cell.innerHTML = info.displaySubject + clsBadge + '<span class="room">'+info.room+'</span>';
+      }
       grid.appendChild(cell);
     });
   });
