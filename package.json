@@ -1,0 +1,9 @@
+{
+  "name": "class-timetable-plus",
+  "version": "1.0.0",
+  "private": true,
+  "description": "시간표+ 수행평가 공유보드 (정적 프론트 + Vercel 서버리스 AI 함수)",
+  "engines": {
+    "node": ">=18"
+  }
+}

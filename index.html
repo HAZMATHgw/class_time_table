@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>시간표+ 수행평가 공유보드</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap');
+
+:root{
+  --cork: #b99a72;
+  --paper: #f7f2e6;
+  --paper-line: #e6ddc7;
+  --ink: #223a5e;
+  --ink-soft: #5c6b82;
+  --pin-red: #d1503f;
+  --lavender: #c9b8e8;
+  --pink: #f2a7bb;
+  --mint: #a9d6b6;
+  --peach: #f5c08c;
+  --sky: #9ecbe0;
+  --butter: #f0d878;
+  --coral: #e8927c;
+  --gray-lav: #c3c2da;
+  --white-note: #fdfcf7;
+  --green-ok:#4f8a5b;
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:'Noto Sans KR', system-ui, sans-serif;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(0,0,0,0.06) 1px, transparent 1.4px) 0 0/14px 14px,
+    var(--cork);
+  color:var(--ink);
+  min-height:100vh;
+  padding:28px 16px 60px;
+}
+.wrap{max-width:1080px;margin:0 auto;}
+
+.board-header{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;padding:0 6px;}
+.board-header h1{font-family:'Gaegu', cursive;font-size:42px;color:#fff;text-shadow: 2px 2px 0 rgba(0,0,0,0.18);margin:0;}
+.board-header p{margin:4px 0 0;color:#fff;opacity:0.92;font-size:14px;}
+
+.panel{background:var(--paper);border-radius:10px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,0.25);position:relative;margin-bottom:22px;}
+.panel::before{content:"";position:absolute;inset:0;border-radius:10px;background-image: repeating-linear-gradient(var(--paper-line) 0 1px, transparent 1px 34px);opacity:0.5;pointer-events:none;}
+.panel > *{position:relative;z-index:1;}
+
+.panel h2{font-family:'Gaegu', cursive;font-size:24px;margin:0 0 4px;color:var(--ink);}
+.panel .desc{font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;}
+
+.student-picker{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px;}
+.student-picker input{flex:1;min-width:180px;border:1px solid #ddd3ba;border-radius:7px;padding:10px 12px;font-family:inherit;font-size:14px;background:#fffef9;outline:none;}
+.student-picker .sid-chip{background:#eee6d3;border-radius:6px;padding:8px 12px;font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap;}
+.pdf-btn{background:var(--ink);color:#fff;border:none;border-radius:7px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.pdf-btn:hover{background:#16283f;}
+.pdf-btn:disabled{opacity:0.5;cursor:default;}
+#printTitle{display:none;}
+.no-student{font-size:13px;color:var(--ink-soft);padding:10px 4px;}
+
+.grid-scroll{overflow-x:auto; position:relative;}
+.grid{display:grid;grid-template-columns: 62px repeat(5, 1fr);gap:6px;min-width:680px;position:relative;}
+.day-head{text-align:center;font-weight:800;font-size:14px;color:var(--ink);padding:8px 0 10px;letter-spacing:1px;}
+.period-label{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--ink-soft);writing-mode:vertical-rl;text-orientation:mixed;min-height:64px;}
+
+.cell{min-height:64px;border-radius:7px;padding:8px 9px;font-size:12px;font-weight:600;line-height:1.3;cursor:pointer;position:relative;box-shadow:0 2px 5px rgba(0,0,0,0.12), inset 0 0 0 1px rgba(0,0,0,0.04);transition:transform .12s ease, box-shadow .12s ease;color:#2c2c2c;}
+.cell:hover{transform:translateY(-2px) rotate(-0.4deg); box-shadow:0 6px 12px rgba(0,0,0,0.2);}
+.cell.empty{background:repeating-linear-gradient(45deg, rgba(0,0,0,0.02) 0 6px, transparent 6px 12px);box-shadow:none;cursor:default;}
+.cell .room{display:block;font-size:10px;font-weight:600;opacity:0.75;margin-top:2px;}
+.cell .pin{position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:var(--pin-red);border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,0.35);display:none;}
+.cell.has-note .pin{display:block;}
+.cell .deadline-chip{display:block;margin-top:4px;font-size:10px;font-weight:700;color:rgba(0,0,0,0.55);}
+
+/* 과목 색상은 이제 JS에서 hsl()로 동적 생성해요 (과목 수만큼 색상환을 균등 분할) */
+
+/* ---- 같은 반 친구(겹강) - 수행평가 모달 안에서 보여줌 ---- */
+.classmate-block{margin-top:14px;padding-top:12px;border-top:1px dashed #e2d7bb;}
+.overlap-title{font-size:12.5px;font-weight:800;color:var(--ink);margin-bottom:8px;}
+.classmate-list{display:flex;flex-wrap:wrap;gap:8px;}
+.classmate-chip{background:#fffef9;border:1px solid #ddd3ba;border-radius:20px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer;color:var(--ink);}
+.classmate-chip:hover{background:var(--ink);color:#fff;}
+.overlap-empty{font-size:12px;color:#a39a80;}
+
+/* ---- modal (수행평가) ---- */
+.overlay{position:fixed;inset:0;background:rgba(20,20,20,0.55);display:none;align-items:center;justify-content:center;z-index:50;padding:16px;}
+.overlay.open{display:flex;}
+.note-card{width:100%;max-width:440px;max-height:88vh;overflow-y:auto;background:var(--white-note);border-radius:4px;padding:24px 22px 20px;box-shadow:0 20px 50px rgba(0,0,0,0.4);position:relative;transform:rotate(-0.6deg);}
+.note-card::before{content:"";position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:18px;height:18px;border-radius:50%;background:var(--pin-red);box-shadow:0 3px 6px rgba(0,0,0,0.4), inset -2px -2px 3px rgba(0,0,0,0.25);}
+.note-card h2{font-family:'Gaegu', cursive;font-size:24px;margin:2px 0 2px;color:var(--ink);}
+.note-card .sub{font-size:12px;color:var(--ink-soft);margin-bottom:14px;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:4px;}
+.field textarea, .field input{width:100%;border:1px solid #ddd3ba;border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;background:#fffef9;outline:none;resize:vertical;}
+.field textarea{min-height:56px;}
+.field .hint{font-size:11px;color:#9a9481;margin-top:3px;}
+.ai-btn{width:100%;background:#eef1e4;color:#4a5a2e;border:1px dashed #9aad6f;border-radius:6px;padding:8px 10px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;}
+.ai-btn:disabled{opacity:0.6;cursor:default;}
+.ai-block{background:#f5f7ee;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:12px;}
+.ai-block strong{display:block;margin-bottom:6px;color:#4a5a2e;font-size:11.5px;}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.chip{background:#dfe8cd;border-radius:20px;padding:4px 10px;font-size:11.5px;cursor:pointer;font-weight:600;color:#3c4a24;}
+.chip:hover{background:#cddbb3;}
+.ai-block ul{margin:0;padding-left:18px;}
+.modal-actions{display:flex;gap:8px;margin-top:16px;}
+.btn{flex:1;padding:10px 12px;border:none;border-radius:6px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;}
+.btn-save{background:var(--ink);color:#fff;} .btn-save:hover{background:#16283f;}
+.btn-close{background:#eee6d3;color:var(--ink);} .btn-close:hover{background:#e2d7bb;}
+.save-status{font-size:11px;color:var(--green-ok);margin-top:8px;min-height:14px;}
+.close-x{position:absolute;top:10px;right:12px;border:none;background:none;font-size:18px;cursor:pointer;color:var(--ink-soft);}
+.meta-line{font-size:11px;color:#a39a80;margin-top:2px;}
+
+/* ---- mini timetable modal (다른 학생 보기) ---- */
+.mini-card{width:100%;max-width:560px;background:var(--white-note);border-radius:8px;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,0.4);position:relative;}
+.mini-card h2{font-family:'Gaegu', cursive;font-size:22px;margin:0 0 12px;color:var(--ink);}
+.mini-grid{display:grid;grid-template-columns:44px repeat(5,1fr);gap:4px;}
+.mini-grid .day-head{font-size:11px;padding:4px 0;}
+.mini-grid .period-label{font-size:10px;min-height:38px;}
+.mini-grid .cell{min-height:38px;font-size:10px;padding:4px 5px;cursor:default;}
+.mini-grid .cell:hover{transform:none;box-shadow:0 2px 5px rgba(0,0,0,0.12);}
+.mini-grid .cell .room{font-size:8.5px;}
+
+/* ---- news board ---- */
+.news-form{display:grid;grid-template-columns: 1.3fr 1fr;gap:8px;background:#fffef9;border:1px solid #e6ddc7;border-radius:8px;padding:14px;margin-bottom:20px;}
+.news-form input, .news-form textarea{border:1px solid #ddd3ba;border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;outline:none;}
+.news-form textarea{grid-column:1/3;min-height:50px;resize:vertical;}
+.news-form .row-actions{grid-column:1/3;display:flex;justify-content:flex-end;gap:8px;align-items:center;}
+.news-form button{background:var(--ink);color:#fff;border:none;border-radius:6px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;}
+.news-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+@media (max-width:640px){.news-cols{grid-template-columns:1fr;} .news-form{grid-template-columns:1fr;} .news-form textarea{grid-column:1;} .news-form .row-actions{grid-column:1;}}
+.news-col h3{font-size:13px;font-weight:800;color:var(--ink);margin:0 0 10px;display:flex;align-items:center;gap:6px;}
+.news-col h3 .dot{width:8px;height:8px;border-radius:50%;}
+.dot-urgent{background:var(--pin-red);} .dot-recent{background:var(--green-ok);}
+.news-item{background:#fffef9;border:1px solid #ece3ca;border-left:4px solid var(--pin-red);border-radius:6px;padding:10px 12px;margin-bottom:10px;font-size:12.5px;}
+.news-item.recent{border-left-color:var(--green-ok);}
+.news-item .t{font-weight:700;color:var(--ink);font-size:13px;}
+.news-item .d{color:var(--ink-soft);margin-top:3px;white-space:pre-wrap;}
+.news-item .meta{margin-top:6px;font-size:10.5px;color:#a39a80;display:flex;justify-content:space-between;}
+.news-empty{font-size:12px;color:#a39a80;padding:8px 2px;}
+.footnote{text-align:center;color:#fff;opacity:0.85;font-size:11.5px;margin-top:6px;}
+
+/* ---- 시간표 PDF/인쇄 출력: #grid(요일 줄부터)만 인쇄돼요 ---- */
+@media print{
+  @page{ size: landscape; margin: 12mm; }
+  body *{ visibility:hidden; }
+  #grid, #grid *, #printTitle{ visibility:visible; }
+  #printTitle{
+    display:block; position:fixed; top:0; left:0; width:100%;
+    text-align:center; font-family:'Gaegu', cursive; font-size:22px; color:#000; margin-bottom:8px;
+  }
+  #grid{ position:fixed; top:34px; left:0; width:100%; }
+  body{ background:#fff !important; padding:0; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="board-header">
+    <div>
+      <h1>시간표+ 📌</h1>
+      <p>학교 시간표 원본에서 자동으로 만든 내 시간표 + 수행평가 공유 + 겹강 조회</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>내 시간표 찾기 🔍</h2>
+    <div class="desc">이름을 입력하면 시간표가 자동으로 그려져요. 과목 칸을 누르면 수행평가 메모와 함께, 같은 반에서 그 수업을 듣는 친구도 볼 수 있어요.</div>
+    <div class="student-picker">
+      <input id="studentSearch" list="studentList" placeholder="학생 이름 입력 (예: 홍근우)" oninput="onStudentPick()" />
+      <datalist id="studentList"></datalist>
+      <span class="sid-chip" id="sidChip" style="display:none;"></span>
+      <button class="pdf-btn" id="pdfBtn" onclick="exportTimetablePDF()" disabled>🖨️ PDF로 저장</button>
+    </div>
+    <div class="grid-scroll">
+      <div id="printTitle"></div>
+      <div class="grid" id="grid"></div>
+      <div class="no-student" id="noStudentMsg">이름을 입력하면 시간표가 여기에 나와요.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>오늘의 소식 📣</h2>
+    <div class="desc">리로스쿨 자동 연동은 지원하지 않아요 — 대신 대회·공모전 정보를 직접 등록해서 함께 볼 수 있어요.</div>
+    <div class="news-form">
+      <input id="newsTitle" placeholder="대회/공모전 제목" />
+      <input id="newsDeadline" type="date" />
+      <textarea id="newsDesc" placeholder="설명, 참가 대상, 링크 등을 자유롭게 적어주세요"></textarea>
+      <div class="row-actions"><span class="save-status" id="newsStatus"></span><button onclick="addNews()">등록하기</button></div>
+    </div>
+    <div class="news-cols">
+      <div class="news-col"><h3><span class="dot dot-urgent"></span>마감임박</h3><div id="urgentList"></div></div>
+      <div class="news-col"><h3><span class="dot dot-recent"></span>최근 등록</h3><div id="recentList"></div></div>
+    </div>
+  </div>
+
+  <div class="footnote" id="storageFootnote">⚠️ Supabase 설정 전이라 지금은 이 브라우저에만 저장돼요(localStorage). README를 따라 연결하면 반 전체와 공유돼요.</div>
+</div>
+
+<!-- 수행평가 메모 모달 -->
+<div class="overlay" id="overlay">
+  <div class="note-card">
+    <button class="close-x" onclick="closeModal()">✕</button>
+    <h2 id="modalSubject"></h2>
+    <div class="sub" id="modalDaytime"></div>
+    <div class="field"><label>수행평가 내용</label><textarea id="fContent" placeholder="예: 사회 현상 분석 보고서 작성 및 발표"></textarea></div>
+    <div class="field"><label>제출 기한 / 평가일</label><input id="fDeadline" type="date" /></div>
+    <div class="field"><label>관련 검색어</label><input id="fKeywords" placeholder="쉼표로 구분 (예: 통계 분석, 설문조사 설계)" /><div class="hint">산출물형 수행평가 준비에 도움될 검색어를 적어주세요</div></div>
+    <div class="classmate-block" id="classmateBlock" style="display:none;"></div>
+    <button class="ai-btn" id="aiIdeaBtn" onclick="getAiIdeas()">💡 AI로 검색어·아이디어 받기 (가입 없이, 브라우저에서 실행)</button>
+    <div id="aiIdeaBox" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn btn-close" onclick="closeModal()">닫기</button>
+      <button class="btn btn-save" onclick="saveNote()">저장</button>
+    </div>
+    <div class="save-status" id="modalStatus"></div>
+    <div class="meta-line" id="modalMeta"></div>
+  </div>
+</div>
+
+<!-- 다른 학생 시간표 미리보기 모달 -->
+<div class="overlay" id="miniOverlay">
+  <div class="mini-card">
+    <button class="close-x" onclick="closeMini()">✕</button>
+    <h2 id="miniTitle"></h2>
+    <div class="mini-grid" id="miniGrid"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="data.js"></script>
+<script>
+// ---- Supabase 설정 ----
+// 아래 두 값을 Supabase 프로젝트 설정(Settings > API)에서 복사해 붙여넣으세요.
+// anon public key는 "공개해도 되는" 키예요 (RLS로 보호하는 게 원칙이지만,
+// 이 프로젝트는 로그인 없는 반 전체 공유용이라 supabase-schema.sql에서 RLS를
+// 껐어요). 두 값을 비워두면 자동으로 이 브라우저에만 저장되는 모드로 동작해요.
+const SUPABASE_URL = '';       // 예: 'https://abcdefghijk.supabase.co'
+const SUPABASE_ANON_KEY = '';  // 예: 'eyJhbGciOi...'
+
+let sb = null;
+if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  document.addEventListener('DOMContentLoaded', () => {
+    const f = document.getElementById('storageFootnote');
+    if (f) f.textContent = '✅ Supabase에 연결되어 있어요 — 수행평가 메모·소식이 반 전체와 공유돼요.';
+  });
+}
+</script>
+<script>
+const days = ['월','화','수','목','금'];
+const periods = [1,2,3,4,5,6,7,8,9];
+
+const subjectColorMap = {};
+let colorMapReady = false;
+function buildSubjectColorMap(){
+  const set = new Set();
+  SCHEDULE_DATA.students.forEach(s=>{
+    Object.values(s.grid).forEach(info=> set.add(info.subject));
+  });
+  const list = Array.from(set).sort();
+  const n = list.length;
+  list.forEach((subj,i)=>{
+    const hue = Math.round(i * (360/n));
+    subjectColorMap[subj] = `hsl(${hue}, 58%, 80%)`;
+  });
+  colorMapReady = true;
+}
+function colorFor(subject){
+  return subjectColorMap[subject] || 'hsl(0, 0%, 85%)';
+}
+
+let evaluations = {};   // { subjectFullName: {content, deadline, keywords, updatedAt} }
+let newsList = [];
+let activeSubject = null;
+let currentStudent = null;
+
+function studentByName(name){
+  return SCHEDULE_DATA.students.find(s=>s.name === name);
+}
+
+function setupStudentList(){
+  const dl = document.getElementById('studentList');
+  dl.innerHTML = SCHEDULE_DATA.students.map(s=>`<option value="${s.name}">`).join('');
+}
+
+function onStudentPick(){
+  const val = document.getElementById('studentSearch').value.trim();
+  const stu = studentByName(val);
+  const chip = document.getElementById('sidChip');
+  const pdfBtn = document.getElementById('pdfBtn');
+  if(stu){
+    currentStudent = stu;
+    chip.style.display='inline-block';
+    chip.textContent = '학번 ' + stu.sid;
+    pdfBtn.disabled = false;
+  } else {
+    currentStudent = null;
+    chip.style.display='none';
+    pdfBtn.disabled = true;
+  }
+  buildGrid();
+}
+
+function exportTimetablePDF(){
+  if(!currentStudent) return;
+  document.getElementById('printTitle').textContent = currentStudent.name + ' 시간표';
+  window.print();
+}
+
+function buildGrid(){
+  const grid = document.getElementById('grid');
+  const noMsg = document.getElementById('noStudentMsg');
+  grid.innerHTML = '';
+  if(!currentStudent){
+    grid.style.display='none';
+    noMsg.style.display='block';
+    return;
+  }
+  grid.style.display='grid';
+  noMsg.style.display='none';
+
+  grid.appendChild(document.createElement('div'));
+  days.forEach(d=>{ const h=document.createElement('div'); h.className='day-head'; h.textContent=d; grid.appendChild(h); });
+  periods.forEach(p=>{
+    const lbl = document.createElement('div'); lbl.className='period-label'; lbl.textContent=p+'교시'; grid.appendChild(lbl);
+    days.forEach(d=>{
+      const key = d+'-'+p;
+      const info = currentStudent.grid[key];
+      const cell = document.createElement('div');
+      cell.dataset.key = key;
+      if(!info){
+        cell.className = 'cell empty';
+      } else {
+        cell.className = 'cell';
+        cell.style.background = colorFor(info.subject);
+        const teacherLine = info.teacher ? '<span class="room">'+info.teacher+(info.room?' · '+info.room:'')+'</span>' : (info.room ? '<span class="room">'+info.room+'</span>' : '');
+        cell.innerHTML = info.displaySubject + teacherLine + '<span class="pin"></span>';
+        cell.onclick = () => openModal(key, info);
+      }
+      grid.appendChild(cell);
+    });
+  });
+  refreshPins();
+}
+
+function refreshPins(){
+  if(!currentStudent) return;
+  Object.keys(currentStudent.grid).forEach(key=>{
+    const info = currentStudent.grid[key];
+    const data = evaluations[info.subject];
+    const cellEl = document.querySelector('#grid .cell[data-key="'+key+'"]');
+    if(!cellEl) return;
+    if(data && data.content){
+      cellEl.classList.add('has-note');
+      let chip = cellEl.querySelector('.deadline-chip');
+      if(!chip && data.deadline){ chip = document.createElement('span'); chip.className='deadline-chip'; cellEl.appendChild(chip); }
+      if(chip) chip.textContent = data.deadline ? '📅 '+data.deadline : '';
+    }
+  });
+}
+
+function openModal(key, info){
+  activeSubject = info.subject;
+  const [d,p] = key.split('-');
+  document.getElementById('modalSubject').textContent = info.displaySubject;
+  const teacherPart = info.teacher ? ` · ${info.teacher} 선생님` : '';
+  const roomPart = info.room ? ` · ${info.room}` : '';
+  document.getElementById('modalDaytime').textContent = `${d}요일 ${p}교시${teacherPart}${roomPart}`;
+  const data = evaluations[info.subject] || {};
+  document.getElementById('fContent').value = data.content || '';
+  document.getElementById('fDeadline').value = data.deadline || '';
+  document.getElementById('fKeywords').value = data.keywords || '';
+  document.getElementById('modalStatus').textContent = '';
+  document.getElementById('modalMeta').textContent = data.updatedAt ? `마지막 수정: ${new Date(data.updatedAt).toLocaleDateString('ko-KR')}` : '';
+  document.getElementById('aiIdeaBox').style.display = 'none';
+  document.getElementById('aiIdeaBox').innerHTML = '';
+  renderClassmateBlock(info);
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('overlay').classList.remove('open'); activeSubject = null; }
+
+function renderClassmateBlock(info){
+  const block = document.getElementById('classmateBlock');
+  if(!info.cls){ block.style.display = 'none'; block.innerHTML=''; return; }
+  const classmates = SCHEDULE_DATA.students.filter(s=>{
+    const st = currentStudent;
+    return s.classes[info.subject] === info.cls && (!st || s.name !== st.name);
+  });
+  let html = `<div class="overlap-title">👥 같은 반에서 이 수업을 듣는 친구 (${classmates.length}명)</div>`;
+  if(classmates.length === 0){
+    html += '<div class="overlap-empty">등록된 친구가 없어요</div>';
+  } else {
+    html += '<div class="classmate-list">' + classmates.map(s=>
+      `<span class="classmate-chip" onclick="showMini('${escapeHtml(s.name).replace(/'/g,"&#39;")}')">${escapeHtml(s.name)}</span>`
+    ).join('') + '</div>';
+  }
+  block.innerHTML = html;
+  block.style.display = 'block';
+}
+
+
+// ---- localStorage (Supabase 미설정 시 대체용) ----
+function lsGet(key){ try{ const v = localStorage.getItem(key); return v?JSON.parse(v):null; }catch(e){ return null; } }
+function lsSet(key, value){ try{ localStorage.setItem(key, JSON.stringify(value)); return true; }catch(e){ return false; } }
+
+async function saveNote(){
+  if(!activeSubject) return;
+  const entry = {
+    content: document.getElementById('fContent').value.trim(),
+    deadline: document.getElementById('fDeadline').value || null,
+    keywords: document.getElementById('fKeywords').value.trim()
+  };
+  const statusEl = document.getElementById('modalStatus');
+  statusEl.textContent = '저장 중...';
+
+  if(sb){
+    const { error } = await sb.from('evaluations').upsert({
+      subject: activeSubject,
+      content: entry.content,
+      deadline: entry.deadline,
+      keywords: entry.keywords,
+      updated_at: new Date().toISOString()
+    });
+    if(!error){
+      evaluations[activeSubject] = { ...entry, updatedAt: new Date().toISOString() };
+      statusEl.textContent = '저장됨 ✓ (반 전체와 공유돼요)';
+      document.getElementById('modalMeta').textContent = `마지막 수정: ${new Date().toLocaleDateString('ko-KR')}`;
+      refreshPins();
+    } else {
+      statusEl.textContent = '저장 실패: ' + error.message;
+    }
+    return;
+  }
+
+  evaluations[activeSubject] = { ...entry, updatedAt: new Date().toISOString() };
+  const ok = lsSet('evaluations', evaluations);
+  if(ok){
+    statusEl.textContent = '저장됨 ✓ (지금은 이 브라우저에만 — Supabase 연동 전)';
+    document.getElementById('modalMeta').textContent = `마지막 수정: ${new Date().toLocaleDateString('ko-KR')}`;
+    refreshPins();
+  } else { statusEl.textContent = '저장 실패, 다시 시도해주세요'; }
+}
+
+async function loadEvaluations(){
+  if(sb){
+    const { data, error } = await sb.from('evaluations').select('*');
+    if(!error && data){
+      evaluations = {};
+      data.forEach(row=>{
+        evaluations[row.subject] = { content: row.content, deadline: row.deadline, keywords: row.keywords, updatedAt: row.updated_at };
+      });
+      refreshPins();
+      return;
+    }
+  }
+  evaluations = lsGet('evaluations') || {};
+  refreshPins();
+}
+
+// ---- AI: keyword / idea suggestions (브라우저 안에서 직접 실행, 가입/키 필요 없음) ----
+function escapeHtml(str){ const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
+
+const WEBLLM_MODEL_ID = 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC';
+let webllmEngine = null;
+let webllmModule = null;
+
+async function ensureWebllmEngine(onProgress){
+  if(webllmEngine) return webllmEngine;
+  if(!webllmModule){
+    onProgress && onProgress('AI 엔진 코드를 불러오는 중...');
+    webllmModule = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@latest/+esm');
+  }
+  webllmEngine = await webllmModule.CreateMLCEngine(WEBLLM_MODEL_ID, {
+    initProgressCallback: (p) => { onProgress && onProgress(p && p.text ? p.text : '모델을 준비하는 중...'); }
+  });
+  return webllmEngine;
+}
+
+async function getAiIdeas(){
+  const subject = document.getElementById('modalSubject').textContent;
+  const content = document.getElementById('fContent').value.trim();
+  const box = document.getElementById('aiIdeaBox');
+  const btn = document.getElementById('aiIdeaBtn');
+
+  if(!navigator.gpu){
+    box.style.display='block';
+    box.innerHTML = '<div class="hint">이 브라우저는 브라우저 내장 AI(WebGPU)를 지원하지 않아요. 최신 Chrome이나 Edge로 열어보시면 될 거예요.</div>';
+    return;
+  }
+
+  btn.disabled = true;
+  box.style.display = 'block';
+  box.innerHTML = '<div class="hint">🧠 AI를 준비하는 중... (처음 한 번은 모델을 내려받아서 1분 이상 걸릴 수 있어요. 이후엔 훨씬 빨라져요)</div>';
+
+  try{
+    const engine = await ensureWebllmEngine((msg)=>{
+      box.innerHTML = `<div class="hint">🧠 ${escapeHtml(msg)}</div>`;
+    });
+    btn.textContent = '생각하는 중...';
+    box.innerHTML = '<div class="hint">생각하는 중...</div>';
+
+    const prompt =
+      `과목: ${subject}\n` +
+      `수행평가 내용: ${content || '(아직 미정 — 과목명 기준으로 일반적인 수행평가 아이디어 제안)'}\n\n` +
+      '한국 고등학생이 이 수행평가를 준비할 때 도움이 될 검색어 6개와, 산출물 주제 아이디어 3개를 제안해줘. ' +
+      '반드시 아래 JSON 형식으로만 답해. 다른 설명이나 마크다운 없이 JSON만: ' +
+      '{"keywords":["...","..."],"ideas":["...","..."]}';
+
+    const reply = await engine.chat.completions.create({
+      messages: [{ role:'user', content: prompt }],
+      temperature: 0.7
+    });
+    const textBlock = reply?.choices?.[0]?.message?.content || '';
+    let clean = textBlock.replace(/```json|```/g,'').trim();
+    let parsed = null;
+    try{ parsed = JSON.parse(clean); }
+    catch(e){
+      const m = clean.match(/\{[\s\S]*\}/);
+      if(m){ try{ parsed = JSON.parse(m[0]); }catch(e2){ parsed = null; } }
+    }
+
+    if(parsed && (parsed.keywords || parsed.ideas)){
+      let html = '<div class="ai-block"><strong>추천 검색어 (클릭하면 추가돼요)</strong><div class="chip-row">';
+      (parsed.keywords||[]).forEach(k=>{ html += `<span class="chip" onclick="addKeyword(this)" data-k="${escapeHtml(k)}">${escapeHtml(k)}</span>`; });
+      html += '</div><strong>산출물 아이디어</strong><ul>';
+      (parsed.ideas||[]).forEach(i=>{ html += `<li>${escapeHtml(i)}</li>`; });
+      html += '</ul></div>';
+      box.innerHTML = html;
+    } else {
+      // 작은 모델이라 가끔 JSON 형식을 안 지킬 때가 있어요 - 그럴 땐 받은 답변을 그대로 보여줘요.
+      box.innerHTML = `<div class="ai-block"><strong>AI 응답</strong><div class="hint">${escapeHtml(textBlock || '응답이 비어있어요. 다시 시도해보세요.')}</div></div>`;
+    }
+  }catch(e){
+    box.innerHTML = `<div class="hint">브라우저 AI를 불러오지 못했어요: ${escapeHtml(e.message)}</div>`;
+  }
+  btn.disabled = false; btn.textContent = '💡 AI로 검색어·아이디어 받기';
+}
+function addKeyword(el){
+  const k = el.dataset.k;
+  const f = document.getElementById('fKeywords');
+  const existing = f.value.split(',').map(s=>s.trim()).filter(Boolean);
+  if(!existing.includes(k)) existing.push(k);
+  f.value = existing.join(', ');
+}
+
+// ---- 다른 학생 시간표 미리보기 ----
+function showMini(name){
+  const stu = studentByName(name);
+  if(!stu) return;
+  document.getElementById('miniTitle').textContent = name + '의 시간표';
+  const grid = document.getElementById('miniGrid');
+  grid.innerHTML = '';
+  grid.appendChild(document.createElement('div'));
+  days.forEach(d=>{ const h=document.createElement('div'); h.className='day-head'; h.textContent=d; grid.appendChild(h); });
+  periods.forEach(p=>{
+    const lbl = document.createElement('div'); lbl.className='period-label'; lbl.textContent=p; grid.appendChild(lbl);
+    days.forEach(d=>{
+      const key = d+'-'+p;
+      const info = stu.grid[key];
+      const cell = document.createElement('div');
+      if(!info){ cell.className='cell empty'; }
+      else{ cell.className='cell'; cell.style.background=colorFor(info.subject); cell.innerHTML = info.displaySubject + '<span class="room">'+info.room+'</span>'; }
+      grid.appendChild(cell);
+    });
+  });
+  document.getElementById('miniOverlay').classList.add('open');
+}
+function closeMini(){ document.getElementById('miniOverlay').classList.remove('open'); }
+
+// ---- news board ----
+function daysUntil(dateStr){
+  if(!dateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(dateStr+'T00:00:00');
+  return Math.round((target-today)/86400000);
+}
+function renderNews(){
+  const urgentEl = document.getElementById('urgentList');
+  const recentEl = document.getElementById('recentList');
+  const withDeadline = newsList.filter(n=>n.deadline);
+  const urgent = withDeadline.map(n=>({...n, dleft: daysUntil(n.deadline)})).filter(n=>n.dleft>=0 && n.dleft<=14).sort((a,b)=>a.dleft-b.dleft);
+  const recent = [...newsList].sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt)).slice(0,8);
+
+  urgentEl.innerHTML = urgent.length ? '' : '<div class="news-empty">마감이 임박한 소식이 없어요</div>';
+  urgent.forEach(n=>{
+    const item = document.createElement('div'); item.className='news-item';
+    item.innerHTML = `<div class="t">${escapeHtml(n.title)}</div><div class="d">${escapeHtml(n.desc||'')}</div><div class="meta"><span>D-${n.dleft} · ${n.deadline}</span></div>`;
+    urgentEl.appendChild(item);
+  });
+  recentEl.innerHTML = recent.length ? '' : '<div class="news-empty">아직 등록된 소식이 없어요</div>';
+  recent.forEach(n=>{
+    const item = document.createElement('div'); item.className='news-item recent';
+    const dateLabel = new Date(n.createdAt).toLocaleDateString('ko-KR');
+    item.innerHTML = `<div class="t">${escapeHtml(n.title)}</div><div class="d">${escapeHtml(n.desc||'')}</div><div class="meta"><span>${n.deadline ? '마감 '+n.deadline : '상시'}</span><span>${dateLabel}</span></div>`;
+    recentEl.appendChild(item);
+  });
+}
+async function addNews(){
+  const title = document.getElementById('newsTitle').value.trim();
+  const deadline = document.getElementById('newsDeadline').value || null;
+  const desc = document.getElementById('newsDesc').value.trim();
+  const status = document.getElementById('newsStatus');
+  if(!title){ status.textContent = '제목을 입력해주세요'; return; }
+  status.textContent = '등록 중...';
+
+  if(sb){
+    const { error } = await sb.from('news').insert({ title, deadline, description: desc });
+    if(!error){
+      status.textContent = '등록됨 ✓ (반 전체와 공유돼요)';
+      document.getElementById('newsTitle').value='';
+      document.getElementById('newsDeadline').value='';
+      document.getElementById('newsDesc').value='';
+      await loadNews();
+    } else {
+      status.textContent = '등록 실패: ' + error.message;
+    }
+    return;
+  }
+
+  const item = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), title, deadline, desc, createdAt: new Date().toISOString() };
+  newsList.push(item);
+  const ok = lsSet('news', newsList);
+  if(ok){
+    status.textContent = '등록됨 ✓ (지금은 이 브라우저에만 — Supabase 연동 전)';
+    document.getElementById('newsTitle').value='';
+    document.getElementById('newsDeadline').value='';
+    document.getElementById('newsDesc').value='';
+    renderNews();
+  } else { status.textContent = '등록 실패'; }
+}
+
+async function loadNews(){
+  if(sb){
+    const { data, error } = await sb.from('news').select('*').order('created_at', { ascending:false });
+    if(!error && data){
+      newsList = data.map(r=>({ id:r.id, title:r.title, deadline:r.deadline, desc:r.description, createdAt:r.created_at }));
+      renderNews();
+      return;
+    }
+  }
+  newsList = lsGet('news') || [];
+  renderNews();
+}
+
+// ---- init ----
+buildSubjectColorMap();
+setupStudentList();
+loadEvaluations();
+loadNews();
+buildGrid();
+</script>
+</body>
+</html>
