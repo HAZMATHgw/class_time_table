@@ -234,7 +234,7 @@ body{
 // anon public key는 "공개해도 되는" 키예요 (RLS로 보호하는 게 원칙이지만,
 // 이 프로젝트는 로그인 없는 반 전체 공유용이라 supabase-schema.sql에서 RLS를
 // 껐어요). 두 값을 비워두면 자동으로 이 브라우저에만 저장되는 모드로 동작해요.
-const SUPABASE_URL = 'https://sungngjdjkrjsfziijwz.supabase.co/rest/v1/';       // 예: 'https://abcdefghijk.supabase.co'
+const SUPABASE_URL = 'https://sungngjdjkrjsfziijwz.supabase.co';       // 예: 'https://abcdefghijk.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1bmduZ2pkamtyanNmemlpand6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwMDcxNzMsImV4cCI6MjEwMjU4MzE3M30.suRkAtWxbvnHTRMVMUodHiU2P6BDDvYRYW2bv22Q89k';  // 예: 'eyJhbGciOi...'
 
 let sb = null;
