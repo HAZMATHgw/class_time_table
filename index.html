@@ -203,11 +203,15 @@ body{
 .free-form{display:flex;flex-direction:column;gap:8px;background:#fffef9;border:1px solid #e6ddc7;border-radius:8px;padding:14px;margin-bottom:20px;}
 .free-form input, .free-form textarea{border:1px solid #ddd3ba;border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;outline:none;}
 .free-form textarea{min-height:70px;resize:vertical;}
+.free-form input[type=file]{border:1px dashed #ddd3ba;padding:8px;font-size:12px;}
+.free-img-preview{max-width:160px;max-height:160px;border-radius:8px;margin-top:2px;display:none;object-fit:cover;}
 .free-form .row-actions{display:flex;justify-content:flex-end;gap:8px;align-items:center;}
 .free-form button{background:var(--ink);color:#fff;border:none;border-radius:6px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;}
+.free-form button:disabled{opacity:0.6;cursor:default;}
 .free-post{background:#fffef9;border:1px solid #ece3ca;border-radius:6px;padding:12px 14px;margin-bottom:10px;font-size:12.5px;}
 .free-post .t{font-weight:700;color:var(--ink);font-size:13.5px;}
 .free-post .d{color:#3a3a3a;margin-top:5px;white-space:pre-wrap;}
+.free-post img{max-width:100%;max-height:320px;border-radius:8px;margin-top:8px;display:block;object-fit:contain;cursor:pointer;}
 .free-post .meta{margin-top:8px;font-size:10.5px;color:#a39a80;display:flex;justify-content:space-between;align-items:center;}
 .free-post .meta button{background:none;border:none;color:var(--pin-red);cursor:pointer;font-size:12px;}
 .free-empty{font-size:12px;color:#a39a80;padding:8px 2px;}
@@ -326,7 +330,9 @@ body{
       <div class="free-form">
         <input id="freeTitle" placeholder="제목" />
         <textarea id="freeContent" placeholder="내용을 자유롭게 적어주세요"></textarea>
-        <div class="row-actions"><span class="save-status" id="freeStatus"></span><button onclick="addFreePost()">등록하기</button></div>
+        <input id="freeImage" type="file" accept="image/*" onchange="onFreeImagePick(this)" />
+        <img id="freeImagePreview" class="free-img-preview" />
+        <div class="row-actions"><span class="save-status" id="freeStatus"></span><button id="freePostBtn" onclick="addFreePost()">등록하기</button></div>
       </div>
       <div id="freeList"></div>
     </div>
@@ -419,7 +425,7 @@ body{
 // anon public key는 "공개해도 되는" 키예요 (RLS로 보호하는 게 원칙이지만,
 // 이 프로젝트는 로그인 없는 반 전체 공유용이라 supabase-schema.sql에서 RLS를
 // 껐어요). 두 값을 비워두면 자동으로 이 브라우저에만 저장되는 모드로 동작해요.
-const SUPABASE_URL = 'https://sungngjdjkrjsfziijwz.supabase.co/rest/v1/';       // 예: 'https://abcdefghijk.supabase.co'
+const SUPABASE_URL = 'https://sungngjdjkrjsfziijwz.supabase.co';       // 예: 'https://abcdefghijk.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1bmduZ2pkamtyanNmemlpand6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwMDcxNzMsImV4cCI6MjEwMjU4MzE3M30.suRkAtWxbvnHTRMVMUodHiU2P6BDDvYRYW2bv22Q89k';  // 예: 'eyJhbGciOi...'
 
 let sb = null;
@@ -1225,11 +1231,51 @@ async function saveNoticeBoard(id, textareaId, statusId){
 }
 
 // ---- 자유게시판 ----
+let freeImageFile = null;
+const FREE_IMAGE_MAX_MB = 5;
+
+function onFreeImagePick(input){
+  const file = input.files && input.files[0];
+  const preview = document.getElementById('freeImagePreview');
+  const status = document.getElementById('freeStatus');
+  if(!file){ freeImageFile = null; preview.style.display='none'; return; }
+  if(file.size > FREE_IMAGE_MAX_MB * 1024 * 1024){
+    status.textContent = `사진은 ${FREE_IMAGE_MAX_MB}MB 이하로 올려주세요`;
+    input.value = '';
+    freeImageFile = null;
+    preview.style.display = 'none';
+    return;
+  }
+  status.textContent = '';
+  freeImageFile = file;
+  const reader = new FileReader();
+  reader.onload = () => { preview.src = reader.result; preview.style.display = 'block'; };
+  reader.readAsDataURL(file);
+}
+
+function fileToDataUrl(file){
+  return new Promise((resolve, reject)=>{
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error('이미지를 읽지 못했어요'));
+    r.readAsDataURL(file);
+  });
+}
+
+async function uploadFreeImage(file){
+  const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g,'') || 'png';
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+  const { error: upErr } = await sb.storage.from('post-images').upload(path, file, { cacheControl: '3600', upsert: false });
+  if(upErr) throw upErr;
+  const { data } = sb.storage.from('post-images').getPublicUrl(path);
+  return data.publicUrl;
+}
+
 async function loadFreePosts(){
   if(sb){
     const { data, error } = await sb.from('free_posts').select('*').order('created_at', { ascending:false });
     if(!error && data){
-      freePostList = data.map(r=>({ id:r.id, title:r.title, content:r.content, createdAt:r.created_at }));
+      freePostList = data.map(r=>({ id:r.id, title:r.title, content:r.content, imageUrl:r.image_url, createdAt:r.created_at }));
       renderFreePosts();
       return;
     }
@@ -1237,31 +1283,58 @@ async function loadFreePosts(){
   freePostList = lsGet('free_posts') || [];
   renderFreePosts();
 }
+
+function resetFreeForm(){
+  document.getElementById('freeTitle').value='';
+  document.getElementById('freeContent').value='';
+  document.getElementById('freeImage').value='';
+  document.getElementById('freeImagePreview').style.display='none';
+  freeImageFile = null;
+}
+
 async function addFreePost(){
   const title = document.getElementById('freeTitle').value.trim();
   const content = document.getElementById('freeContent').value.trim();
   const status = document.getElementById('freeStatus');
+  const btn = document.getElementById('freePostBtn');
   if(!title){ status.textContent = '제목을 입력해주세요'; return; }
-  status.textContent = '등록 중...';
-  if(sb){
-    const { error } = await sb.from('free_posts').insert({ title, content });
-    if(!error){
-      status.textContent = '등록됨 ✓ (반 전체와 공유돼요)';
-      document.getElementById('freeTitle').value='';
-      document.getElementById('freeContent').value='';
-      await loadFreePosts();
-    } else { status.textContent = '등록 실패: '+error.message; }
-    return;
+
+  btn.disabled = true;
+  try{
+    if(sb){
+      let imageUrl = null;
+      if(freeImageFile){
+        status.textContent = '사진 업로드 중...';
+        imageUrl = await uploadFreeImage(freeImageFile);
+      }
+      status.textContent = '등록 중...';
+      const { error } = await sb.from('free_posts').insert({ title, content, image_url: imageUrl });
+      if(!error){
+        status.textContent = '등록됨 ✓ (반 전체와 공유돼요)';
+        resetFreeForm();
+        await loadFreePosts();
+      } else { status.textContent = '등록 실패: '+error.message; }
+      return;
+    }
+
+    let imageUrl = null;
+    if(freeImageFile){
+      status.textContent = '사진 처리 중...';
+      imageUrl = await fileToDataUrl(freeImageFile); // 로컬 모드: base64로 저장
+    }
+    freePostList.unshift({ id: Date.now()+Math.floor(Math.random()*1000), title, content, imageUrl, createdAt: new Date().toISOString() });
+    const ok = lsSet('free_posts', freePostList);
+    if(ok){
+      status.textContent = '등록됨 ✓ (지금은 이 브라우저에만 — Supabase 연동 전)';
+      resetFreeForm();
+      renderFreePosts();
+    } else { status.textContent = '등록 실패'; }
+  }catch(e){
+    status.textContent = '등록 실패: ' + e.message;
   }
-  freePostList.unshift({ id: Date.now()+Math.floor(Math.random()*1000), title, content, createdAt: new Date().toISOString() });
-  const ok = lsSet('free_posts', freePostList);
-  if(ok){
-    status.textContent = '등록됨 ✓ (지금은 이 브라우저에만 — Supabase 연동 전)';
-    document.getElementById('freeTitle').value='';
-    document.getElementById('freeContent').value='';
-    renderFreePosts();
-  } else { status.textContent = '등록 실패'; }
+  btn.disabled = false;
 }
+
 async function deleteFreePost(id){
   if(!confirm('이 글을 삭제할까요?')) return;
   if(sb){
@@ -1279,9 +1352,11 @@ function renderFreePosts(){
   if(freePostList.length === 0){ box.innerHTML = '<div class="free-empty">아직 글이 없어요. 첫 글을 남겨보세요.</div>'; return; }
   box.innerHTML = freePostList.map(p=>{
     const dateLabel = new Date(p.createdAt).toLocaleString('ko-KR');
+    const img = p.imageUrl ? `<img src="${p.imageUrl}" alt="첨부 사진" onclick="window.open('${p.imageUrl}','_blank')" />` : '';
     return `<div class="free-post">
       <div class="t">${escapeHtml(p.title)}</div>
       <div class="d">${escapeHtml(p.content||'')}</div>
+      ${img}
       <div class="meta"><span>${dateLabel}</span><button onclick="deleteFreePost(${JSON.stringify(p.id)})">삭제</button></div>
     </div>`;
   }).join('');
