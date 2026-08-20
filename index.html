@@ -356,7 +356,16 @@ body{
     <div class="sub" id="modalDaytime"></div>
 
     <div class="field"><label>수행평가 내용</label><textarea id="fContent" placeholder="예: 사회 현상 분석 보고서 작성 및 발표"></textarea></div>
-    <div class="field"><label>제출 기한 / 평가일</label><input id="fDeadline" type="date" /></div>
+    <div class="field" id="deadlineSingleField"><label>제출 기한 / 평가일</label><input id="fDeadline" type="date" /></div>
+    <div class="field" id="deadlineRangeField" style="display:none;">
+      <label>수행 기간 (전체 반 대상 — 시작일 ~ 종료일)</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input id="fDeadlineStart" type="date" style="flex:1;" />
+        <span style="color:var(--ink-soft); font-size:12px;">~</span>
+        <input id="fDeadlineEnd" type="date" style="flex:1;" />
+      </div>
+      <div class="hint">전체 반 대상이라 날짜 하나 대신 기간으로 입력해요. 달력에는 이 기간 내내 표시되고, 마감(종료일) 기준 D-7부터 빨간색이 돼요.</div>
+    </div>
     <div class="field"><label>관련 검색어</label><input id="fKeywords" placeholder="쉼표로 구분 (예: 통계 분석, 설문조사 설계)" /><div class="hint">산출물형 수행평가 준비에 도움될 검색어를 적어주세요</div></div>
     <div class="classmate-block" id="classmateBlock" style="display:none;"></div>
     <button class="ai-btn" id="aiIdeaBtn" onclick="getAiIdeas()">💡 AI로 검색어·아이디어 받기 (가입 없이, 브라우저에서 실행)</button>
@@ -558,7 +567,7 @@ function refreshPins(){
       return;
     }
 
-    const evalDeadlines = evalEntries.map(e=>e.deadline).filter(Boolean);
+    const evalDeadlines = evalEntries.map(e=>e.deadlineEnd || e.deadline).filter(Boolean);
     const quizDeadlines = quizEntries.map(q=>q.quiz_date).filter(Boolean);
     const deadlines = [...evalDeadlines, ...quizDeadlines].sort();
     const nearest = deadlines.length ? deadlines[0] : null;
@@ -577,6 +586,12 @@ function refreshPins(){
   });
 }
 
+function updateDeadlineFieldMode(){
+  const isAll = activeCls === '전체';
+  document.getElementById('deadlineSingleField').style.display = isAll ? 'none' : 'block';
+  document.getElementById('deadlineRangeField').style.display = isAll ? 'block' : 'none';
+}
+
 function openModal(key, info){
   const [d,p] = key.split('-');
   document.getElementById('modalSubject').style.display = 'block';
@@ -588,6 +603,7 @@ function openModal(key, info){
   document.getElementById('modalDaytime').textContent = `${d}요일 ${p}교시${teacherPart}${roomPart}`;
   activeSubject = info.subject;
   activeCls = info.cls || null;
+  updateDeadlineFieldMode();
   prepareModalForm();
   renderClassmateBlock(info);
   document.getElementById('overlay').classList.add('open');
@@ -614,6 +630,7 @@ function openEvalForm(prefill){
 
   activeSubject = subject;
   activeCls = document.getElementById('pickCls').value;
+  updateDeadlineFieldMode();
   prepareModalForm();
   renderClassmateBlock({ subject: activeSubject, cls: activeCls });
   document.getElementById('overlay').classList.add('open');
@@ -637,6 +654,7 @@ function onPickClsChange(){
   activeSubject = document.getElementById('pickSubject').value;
   activeCls = document.getElementById('pickCls').value;
   editingEvalId = null;
+  updateDeadlineFieldMode();
   clearForm();
   renderClassmateBlock({ subject: activeSubject, cls: activeCls });
 }
@@ -648,6 +666,8 @@ function prepareModalForm(){
 function clearForm(){
   document.getElementById('fContent').value = '';
   document.getElementById('fDeadline').value = '';
+  document.getElementById('fDeadlineStart').value = '';
+  document.getElementById('fDeadlineEnd').value = '';
   document.getElementById('fKeywords').value = '';
   document.getElementById('modalStatus').textContent = '';
   document.getElementById('modalMeta').textContent = '';
@@ -659,6 +679,8 @@ function loadEntryIntoForm(entry){
   editingEvalId = entry.id;
   document.getElementById('fContent').value = entry.content || '';
   document.getElementById('fDeadline').value = entry.deadline || '';
+  document.getElementById('fDeadlineStart').value = entry.deadline || '';
+  document.getElementById('fDeadlineEnd').value = entry.deadlineEnd || '';
   document.getElementById('fKeywords').value = entry.keywords || '';
   document.getElementById('modalMeta').textContent = entry.updatedAt ? `마지막 수정: ${new Date(entry.updatedAt).toLocaleDateString('ko-KR')}` : '';
   document.getElementById('deleteEvalBtn').style.display = 'block';
@@ -719,32 +741,49 @@ function lsSet(key, value){ try{ localStorage.setItem(key, JSON.stringify(value)
 
 async function saveNote(){
   if(!activeSubject || !activeCls) return;
+  const isAll = activeCls === '전체';
+  const statusEl = document.getElementById('modalStatus');
+
+  let deadline, deadlineEnd;
+  if(isAll){
+    deadline = document.getElementById('fDeadlineStart').value || null;
+    deadlineEnd = document.getElementById('fDeadlineEnd').value || null;
+    if(deadline && deadlineEnd && deadlineEnd < deadline){
+      statusEl.textContent = '종료일이 시작일보다 빠를 수 없어요';
+      return;
+    }
+  } else {
+    deadline = document.getElementById('fDeadline').value || null;
+    deadlineEnd = null;
+  }
+
   const entry = {
     subject: activeSubject,
     cls: activeCls,
     content: document.getElementById('fContent').value.trim(),
-    deadline: document.getElementById('fDeadline').value || null,
+    deadline,
+    deadlineEnd,
     keywords: document.getElementById('fKeywords').value.trim()
   };
-  const statusEl = document.getElementById('modalStatus');
   statusEl.textContent = '저장 중...';
+  const jumpTarget = entry.deadlineEnd || entry.deadline;
 
   if(sb){
     let error;
     if(editingEvalId != null){
       ({ error } = await sb.from('evaluations').update({
-        content: entry.content, deadline: entry.deadline, keywords: entry.keywords, updated_at: new Date().toISOString()
+        content: entry.content, deadline: entry.deadline, deadline_end: entry.deadlineEnd, keywords: entry.keywords, updated_at: new Date().toISOString()
       }).eq('id', editingEvalId));
     } else {
       ({ error } = await sb.from('evaluations').insert({
-        subject: entry.subject, cls: entry.cls, content: entry.content, deadline: entry.deadline, keywords: entry.keywords
+        subject: entry.subject, cls: entry.cls, content: entry.content, deadline: entry.deadline, deadline_end: entry.deadlineEnd, keywords: entry.keywords
       }));
     }
     if(!error){
       statusEl.textContent = '저장됨 ✓ (반 전체와 공유돼요)';
       await loadEvaluations();
       refreshPins();
-      if(entry.deadline) jumpCalendarTo(entry.deadline, true); else renderCalendar();
+      if(jumpTarget) jumpCalendarTo(jumpTarget, true); else renderCalendar();
     } else {
       statusEl.textContent = '저장 실패: ' + error.message;
     }
@@ -761,7 +800,7 @@ async function saveNote(){
   if(ok){
     statusEl.textContent = '저장됨 ✓ (지금은 이 브라우저에만 — Supabase 연동 전)';
     refreshPins();
-    if(entry.deadline) jumpCalendarTo(entry.deadline, true); else renderCalendar();
+    if(jumpTarget) jumpCalendarTo(jumpTarget, true); else renderCalendar();
   } else { statusEl.textContent = '저장 실패, 다시 시도해주세요'; }
 }
 
@@ -769,7 +808,7 @@ async function loadEvaluations(){
   if(sb){
     const { data, error } = await sb.from('evaluations').select('*');
     if(!error && data){
-      evaluationList = data.map(row=>({ id: row.id, subject: row.subject, cls: row.cls, content: row.content, deadline: row.deadline, keywords: row.keywords, updatedAt: row.updated_at }));
+      evaluationList = data.map(row=>({ id: row.id, subject: row.subject, cls: row.cls, content: row.content, deadline: row.deadline, deadlineEnd: row.deadline_end, keywords: row.keywords, updatedAt: row.updated_at }));
       refreshPins();
       renderCalendar();
       return;
@@ -836,8 +875,10 @@ function renderCalendar(){
 // 하루치 항목(수행평가/퀴즈/대회)을 통일된 형태로 모아줘요.
 function dayItems(dateStr){
   const items = [];
-  evaluationList.filter(e=>e.deadline===dateStr).forEach(e=>{
-    items.push({ type:'eval', id:e.id, label:`📚 ${e.subject} (${e.cls}반)`, sub:e.content, color: colorFor(e.subject) });
+  evaluationList.filter(e=> e.deadlineEnd ? (dateStr >= e.deadline && dateStr <= e.deadlineEnd) : (e.deadline===dateStr) ).forEach(e=>{
+    const clsLabel = e.cls==='전체' ? '전체' : e.cls+'반';
+    const periodTag = e.deadlineEnd ? ` [기간 ${e.deadline}~${e.deadlineEnd}]` : '';
+    items.push({ type:'eval', id:e.id, label:`📚 ${e.subject} (${clsLabel})${periodTag}`, sub:e.content, color: colorFor(e.subject) });
   });
   quizList.filter(q=>q.quiz_date===dateStr).forEach(q=>{
     items.push({ type:'quiz', id:q.id, label:`✏️ ${q.subject} 퀴즈`, sub:q.scope, color: getComputedColor('--coral') });
