@@ -79,39 +79,33 @@ body{
 .cal-header span{font-weight:800;font-size:14px;color:var(--ink);min-width:110px;text-align:center;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:20px;}
 .cal-dow{text-align:center;font-size:11px;font-weight:800;color:var(--ink-soft);padding:4px 0;}
-.cal-day{min-height:58px;background:#fffef9;border:1px solid #ece3ca;border-radius:6px;padding:4px;font-size:10px;overflow:hidden;}
+.cal-day{min-height:46px;background:#fffef9;border:1px solid #ece3ca;border-radius:6px;padding:4px;font-size:10px;overflow:hidden;cursor:default;}
 .cal-day.blank{background:transparent;border:none;}
-.cal-day .dnum{font-weight:700;color:var(--ink-soft);font-size:10.5px;margin-bottom:2px;}
+.cal-day.has-items{cursor:pointer;}
+.cal-day.has-items:hover{background:#fdf8ec;}
+.cal-day .dnum{font-weight:700;color:var(--ink-soft);font-size:10.5px;margin-bottom:3px;}
 .cal-day.today .dnum{color:var(--pin-red);}
-.cal-chip{display:block;border-radius:4px;padding:1px 4px;margin-bottom:2px;font-size:9px;font-weight:700;color:#2c2c2c;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.cal-chip.contest{background:var(--butter) !important;color:#4a3a00;}
-.cal-more{font-size:9px;color:var(--ink-soft);cursor:default;}
-.cal-legend{display:flex;gap:14px;justify-content:center;font-size:11px;color:var(--ink-soft);margin:-10px 0 14px;}
+.cal-dots{display:flex;flex-wrap:wrap;gap:2px;}
+.cal-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto;}
+.cal-dot.quiz{border-radius:2px;}
+.cal-more{font-size:8.5px;color:var(--ink-soft);cursor:default;}
+.cal-legend{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-size:11px;color:var(--ink-soft);margin:-10px 0 14px;}
 .cal-legend span{display:inline-flex;align-items:center;gap:4px;}
 .cal-day.just-saved{outline:3px solid var(--pin-red);outline-offset:1px;transition:outline-color .6s ease;}
+
+/* ---- 하루 상세보기 팝업 (달력 칸 클릭) ---- */
+.day-card{width:100%;max-width:380px;background:var(--white-note);border-radius:8px;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,0.4);position:relative;}
+.day-card h2{font-family:'Gaegu', cursive;font-size:20px;margin:0 0 12px;color:var(--ink);}
+.day-item{display:flex;align-items:center;gap:8px;background:#fffef9;border:1px solid #ece3ca;border-radius:6px;padding:8px 10px;margin-bottom:8px;font-size:12.5px;cursor:pointer;}
+.day-item:hover{background:#fdf8ec;}
+.day-item .di-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
+.day-item .di-main{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.day-empty{font-size:12px;color:#a39a80;}
 
 .eval-table-head{display:flex;justify-content:flex-end;margin-bottom:10px;}
 .add-eval-btn{background:var(--ink);color:#fff;border:none;border-radius:7px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 .add-eval-btn:hover{background:#16283f;}
-.eval-table{width:100%;border-collapse:collapse;font-size:12px;}
-.eval-table th{text-align:left;font-size:11px;color:var(--ink-soft);border-bottom:2px solid #e2d7bb;padding:6px 8px;white-space:nowrap;}
-.eval-table td{padding:8px;border-bottom:1px solid #ece3ca;vertical-align:top;}
-.eval-table tr:hover td{background:#fffef2;}
-.eval-table .et-subj{font-weight:700;color:var(--ink);white-space:nowrap;}
-.eval-table .et-cls{font-size:10.5px;font-weight:800;background:#eee6d3;border-radius:4px;padding:1px 6px;white-space:nowrap;}
-.eval-table .et-content{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.eval-table .et-actions{white-space:nowrap;}
-.eval-table .et-actions button{background:none;border:none;cursor:pointer;font-size:13px;padding:2px 5px;}
-.eval-table-empty{font-size:12px;color:#a39a80;padding:14px 4px;text-align:center;}
-.eval-scroll{overflow-x:auto;}
 
-.entries-list{margin-bottom:14px;}
-.entries-list .et-row{display:flex;align-items:center;gap:8px;background:#fffef9;border:1px solid #ece3ca;border-radius:6px;padding:7px 10px;margin-bottom:6px;font-size:12px;cursor:pointer;}
-.entries-list .et-row:hover{background:#fdf8ec;}
-.entries-list .et-row .et-main{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.entries-list .et-row .et-date{font-size:10.5px;color:var(--ink-soft);white-space:nowrap;}
-.entries-list .et-row .et-del{background:none;border:none;color:var(--pin-red);cursor:pointer;font-size:13px;padding:2px 4px;}
-.entries-empty{font-size:11.5px;color:#a39a80;margin-bottom:10px;}
 .btn-delete{background:#f3d7d1;color:#8a2f22;flex:0 0 auto;}
 .btn-delete:hover{background:#eec2b9;}
 
@@ -180,6 +174,43 @@ body{
 .news-item .d{color:var(--ink-soft);margin-top:3px;white-space:pre-wrap;}
 .news-item .meta{margin-top:6px;font-size:10.5px;color:#a39a80;display:flex;justify-content:space-between;}
 .news-empty{font-size:12px;color:#a39a80;padding:8px 2px;}
+
+/* ---- 하단 게시판: 5개 탭 ---- */
+.board-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+.board-tab-btn{background:#eee6d3;color:var(--ink);border:none;border-radius:20px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+.board-tab-btn.active{background:var(--ink);color:#fff;}
+.board-pane{display:none;}
+.board-pane.active{display:block;}
+
+.quiz-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#fffef9;border:1px solid #e6ddc7;border-radius:8px;padding:14px;margin-bottom:20px;}
+.quiz-form select, .quiz-form input, .quiz-form textarea{border:1px solid #ddd3ba;border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;outline:none;}
+.quiz-form textarea{grid-column:1/3;min-height:50px;resize:vertical;}
+.quiz-form .row-actions{grid-column:1/3;display:flex;justify-content:flex-end;gap:8px;align-items:center;}
+.quiz-form button{background:var(--ink);color:#fff;border:none;border-radius:6px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;}
+@media (max-width:640px){.quiz-form{grid-template-columns:1fr;} .quiz-form textarea{grid-column:1;} .quiz-form .row-actions{grid-column:1;}}
+.quiz-item{background:#fffef9;border:1px solid #ece3ca;border-left:4px solid var(--ink-soft);border-radius:6px;padding:10px 12px;margin-bottom:10px;font-size:12.5px;}
+.quiz-item.urgent{border-left-color:var(--pin-red);}
+.quiz-item .t{font-weight:700;color:var(--ink);font-size:13px;}
+.quiz-item .d{color:var(--ink-soft);margin-top:3px;white-space:pre-wrap;}
+.quiz-item .meta{margin-top:6px;font-size:10.5px;color:#a39a80;display:flex;justify-content:space-between;align-items:center;}
+.quiz-item .meta button{background:none;border:none;color:var(--pin-red);cursor:pointer;font-size:12px;}
+.quiz-empty{font-size:12px;color:#a39a80;padding:8px 2px;}
+
+.notice-board textarea{width:100%;min-height:160px;border:1px solid #ddd3ba;border-radius:8px;padding:12px;font-family:inherit;font-size:13px;background:#fffef9;outline:none;resize:vertical;}
+.notice-board .row-actions{display:flex;justify-content:flex-end;gap:8px;align-items:center;margin-top:8px;}
+.notice-board button{background:var(--ink);color:#fff;border:none;border-radius:6px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;}
+
+.free-form{display:flex;flex-direction:column;gap:8px;background:#fffef9;border:1px solid #e6ddc7;border-radius:8px;padding:14px;margin-bottom:20px;}
+.free-form input, .free-form textarea{border:1px solid #ddd3ba;border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;outline:none;}
+.free-form textarea{min-height:70px;resize:vertical;}
+.free-form .row-actions{display:flex;justify-content:flex-end;gap:8px;align-items:center;}
+.free-form button{background:var(--ink);color:#fff;border:none;border-radius:6px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;}
+.free-post{background:#fffef9;border:1px solid #ece3ca;border-radius:6px;padding:12px 14px;margin-bottom:10px;font-size:12.5px;}
+.free-post .t{font-weight:700;color:var(--ink);font-size:13.5px;}
+.free-post .d{color:#3a3a3a;margin-top:5px;white-space:pre-wrap;}
+.free-post .meta{margin-top:8px;font-size:10.5px;color:#a39a80;display:flex;justify-content:space-between;align-items:center;}
+.free-post .meta button{background:none;border:none;color:var(--pin-red);cursor:pointer;font-size:12px;}
+.free-empty{font-size:12px;color:#a39a80;padding:8px 2px;}
 .footnote{text-align:center;color:#fff;opacity:0.85;font-size:11.5px;margin-top:6px;}
 
 /* ---- 시간표 PDF/인쇄 출력: #grid(요일 줄부터)만 인쇄돼요 ---- */
@@ -224,32 +255,80 @@ body{
 
   <div class="panel">
     <h2>수행평가 정리 📋</h2>
-    <div class="desc">과목마다 반이 여러 개라 마감일이 달라요(예: 논리적글쓰기 X/Y/Z/W). 달력에서 반별 마감일을 한눈에 보고, 표에서 ＋ 버튼으로 새 항목을 추가하세요.</div>
+    <div class="desc">과목마다 반이 여러 개라 마감일이 달라요(예: 논리적글쓰기 X/Y/Z/W). ＋ 버튼으로 새 항목을 추가하고, 달력에서 날짜를 클릭하면 그날 등록된 항목을 볼 수 있어요.</div>
 
     <div class="cal-header">
       <button onclick="shiftMonth(-1)">◀</button>
       <span id="calLabel"></span>
       <button onclick="shiftMonth(1)">▶</button>
     </div>
-    <div class="cal-legend"><span>📚 수행평가</span><span>🏆 대회/공모전</span></div>
+    <div class="cal-legend"><span>📚 수행평가</span><span>✏️ 퀴즈</span><span>🏆 대회/공모전</span></div>
     <div class="cal-grid" id="calGrid"></div>
 
     <div class="eval-table-head"><button class="add-eval-btn" onclick="openEvalForm()">＋ 수행평가 추가</button></div>
-    <div class="eval-scroll"><table class="eval-table" id="evalTable"></table></div>
   </div>
 
   <div class="panel">
-    <h2>오늘의 소식 📣</h2>
-    <div class="desc">리로스쿨 자동 연동은 지원하지 않아요 — 대신 대회·공모전 정보를 직접 등록해서 함께 볼 수 있어요.</div>
-    <div class="news-form">
-      <input id="newsTitle" placeholder="대회/공모전 제목" />
-      <input id="newsDeadline" type="date" />
-      <textarea id="newsDesc" placeholder="설명, 참가 대상, 링크 등을 자유롭게 적어주세요"></textarea>
-      <div class="row-actions"><span class="save-status" id="newsStatus"></span><button onclick="addNews()">등록하기</button></div>
+    <h2>게시판 🗂️</h2>
+    <div class="desc">리로스쿨 자동 연동은 지원하지 않아요 — 대신 퀴즈·대회·공지·자유게시판을 직접 등록해서 함께 볼 수 있어요.</div>
+
+    <div class="board-tabs">
+      <button class="board-tab-btn" data-tab="quiz" onclick="switchBoardTab('quiz')">✏️ 퀴즈</button>
+      <button class="board-tab-btn" data-tab="contest" onclick="switchBoardTab('contest')">🏆 대회</button>
+      <button class="board-tab-btn" data-tab="week" onclick="switchBoardTab('week')">🗓️ 이번주 특별일정</button>
+      <button class="board-tab-btn" data-tab="notice" onclick="switchBoardTab('notice')">📌 학급 공지</button>
+      <button class="board-tab-btn" data-tab="free" onclick="switchBoardTab('free')">💬 자유게시판</button>
     </div>
-    <div class="news-cols">
-      <div class="news-col"><h3><span class="dot dot-urgent"></span>마감임박</h3><div id="urgentList"></div></div>
-      <div class="news-col"><h3><span class="dot dot-recent"></span>최근 등록</h3><div id="recentList"></div></div>
+
+    <!-- 퀴즈 -->
+    <div class="board-pane" id="pane-quiz">
+      <div class="quiz-form">
+        <select id="quizSubject"></select>
+        <input id="quizDate" type="date" />
+        <textarea id="quizScope" placeholder="퀴즈 범위 (예: 3단원 함수의 극한)"></textarea>
+        <div class="row-actions"><span class="save-status" id="quizStatus"></span><button onclick="addQuiz()">등록하기</button></div>
+      </div>
+      <div id="quizList"></div>
+    </div>
+
+    <!-- 대회 -->
+    <div class="board-pane" id="pane-contest">
+      <div class="news-form">
+        <input id="newsTitle" placeholder="대회/공모전 제목" />
+        <input id="newsDeadline" type="date" />
+        <textarea id="newsDesc" placeholder="설명, 참가 대상, 링크 등을 자유롭게 적어주세요"></textarea>
+        <div class="row-actions"><span class="save-status" id="newsStatus"></span><button onclick="addNews()">등록하기</button></div>
+      </div>
+      <div class="news-cols">
+        <div class="news-col"><h3><span class="dot dot-urgent"></span>마감임박</h3><div id="urgentList"></div></div>
+        <div class="news-col"><h3><span class="dot dot-recent"></span>최근 등록</h3><div id="recentList"></div></div>
+      </div>
+    </div>
+
+    <!-- 이번주 특별일정 -->
+    <div class="board-pane" id="pane-week">
+      <div class="notice-board">
+        <textarea id="weekNoticeText" placeholder="이번주 특별일정을 자유롭게 적어주세요 (예: 수요일 5교시 전교생 강당 집합)"></textarea>
+        <div class="row-actions"><span class="save-status" id="weekNoticeStatus"></span><button onclick="saveNoticeBoard('week_special','weekNoticeText','weekNoticeStatus')">저장하기</button></div>
+      </div>
+    </div>
+
+    <!-- 학급 공지 -->
+    <div class="board-pane" id="pane-notice">
+      <div class="notice-board">
+        <textarea id="classNoticeText" placeholder="학급 공지사항을 자유롭게 적어주세요"></textarea>
+        <div class="row-actions"><span class="save-status" id="classNoticeStatus"></span><button onclick="saveNoticeBoard('class_notice','classNoticeText','classNoticeStatus')">저장하기</button></div>
+      </div>
+    </div>
+
+    <!-- 자유게시판 -->
+    <div class="board-pane" id="pane-free">
+      <div class="free-form">
+        <input id="freeTitle" placeholder="제목" />
+        <textarea id="freeContent" placeholder="내용을 자유롭게 적어주세요"></textarea>
+        <div class="row-actions"><span class="save-status" id="freeStatus"></span><button onclick="addFreePost()">등록하기</button></div>
+      </div>
+      <div id="freeList"></div>
     </div>
   </div>
 
@@ -269,8 +348,6 @@ body{
       <select id="pickCls" onchange="onPickClsChange()"></select>
     </div>
     <div class="sub" id="modalDaytime"></div>
-
-    <div class="entries-list" id="entriesList"></div>
 
     <div class="field"><label>수행평가 내용</label><textarea id="fContent" placeholder="예: 사회 현상 분석 보고서 작성 및 발표"></textarea></div>
     <div class="field"><label>제출 기한 / 평가일</label><input id="fDeadline" type="date" /></div>
@@ -311,6 +388,29 @@ body{
   </div>
 </div>
 
+<!-- 퀴즈 상세 모달 -->
+<div class="overlay" id="quizOverlay">
+  <div class="note-card">
+    <button class="close-x" onclick="closeQuizDetail()">✕</button>
+    <h2 id="quizDetailTitle">✏️</h2>
+    <div class="sub" id="quizDetailMeta"></div>
+    <div class="field"><label>범위</label><div class="hint" id="quizDetailScope" style="white-space:pre-wrap;"></div></div>
+    <div class="modal-actions">
+      <button class="btn btn-close" onclick="closeQuizDetail()">닫기</button>
+      <button class="btn btn-delete" onclick="deleteQuizDetail()">삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- 하루 상세보기 모달 (달력 칸 클릭) -->
+<div class="overlay" id="dayDetailOverlay">
+  <div class="day-card">
+    <button class="close-x" onclick="closeDayDetail()">✕</button>
+    <h2 id="dayDetailTitle">📅</h2>
+    <div id="dayDetailList"></div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="data.js"></script>
 <script>
@@ -319,8 +419,8 @@ body{
 // anon public key는 "공개해도 되는" 키예요 (RLS로 보호하는 게 원칙이지만,
 // 이 프로젝트는 로그인 없는 반 전체 공유용이라 supabase-schema.sql에서 RLS를
 // 껐어요). 두 값을 비워두면 자동으로 이 브라우저에만 저장되는 모드로 동작해요.
-const SUPABASE_URL = 'https://sungngjdjkrjsfziijwz.supabase.co';       // 예: 'https://abcdefghijk.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1bmduZ2pkamtyanNmemlpand6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwMDcxNzMsImV4cCI6MjEwMjU4MzE3M30.suRkAtWxbvnHTRMVMUodHiU2P6BDDvYRYW2bv22Q89k';  // 예: 'eyJhbGciOi...'
+const SUPABASE_URL = '';       // 예: 'https://abcdefghijk.supabase.co'
+const SUPABASE_ANON_KEY = '';  // 예: 'eyJhbGciOi...'
 
 let sb = null;
 if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
@@ -355,16 +455,15 @@ function colorFor(subject){
 }
 
 let evaluationList = [];   // [{id, subject, cls, content, deadline, keywords, updatedAt}, ...] — 과목+분반마다 여러 개 가능
+let quizList = [];         // [{id, subject, quiz_date, scope, createdAt}, ...] — 과목 전체(분반 구분 없음) 대상
 let newsList = [];
+let freePostList = [];
 let activeSubject = null;
 let activeCls = null;
 let editingEvalId = null;  // null = 새 항목 추가, 값 있으면 그 id를 수정
 let currentStudent = null;
 let calMonth = new Date(); calMonth.setDate(1);
-
-function evalsFor(subject, cls){
-  return evaluationList.filter(e => e.subject === subject && e.cls === cls);
-}
+let activeBoardTab = 'quiz';
 
 function studentByName(name){
   return SCHEDULE_DATA.students.find(s=>s.name === name);
@@ -440,20 +539,22 @@ function refreshPins(){
   if(!currentStudent) return;
   Object.keys(currentStudent.grid).forEach(key=>{
     const info = currentStudent.grid[key];
-    const entries = info.cls ? evalsFor(info.subject, info.cls) : [];
-    const withContent = entries.filter(e=>e.content);
+    const evalEntries = info.cls ? evaluationList.filter(e=>e.subject===info.subject && (e.cls===info.cls || e.cls==='전체') && e.content) : [];
+    const quizEntries = quizList.filter(q=>q.subject===info.subject);
     const cellEl = document.querySelector('#grid .cell[data-key="'+key+'"]');
     if(!cellEl) return;
 
     let chip = cellEl.querySelector('.deadline-chip');
 
-    if(withContent.length === 0){
+    if(evalEntries.length === 0 && quizEntries.length === 0){
       cellEl.classList.remove('has-note','pin-urgent');
       if(chip) chip.remove();
       return;
     }
 
-    const deadlines = withContent.map(e=>e.deadline).filter(Boolean).sort();
+    const evalDeadlines = evalEntries.map(e=>e.deadline).filter(Boolean);
+    const quizDeadlines = quizEntries.map(q=>q.quiz_date).filter(Boolean);
+    const deadlines = [...evalDeadlines, ...quizDeadlines].sort();
     const nearest = deadlines.length ? deadlines[0] : null;
     const daysLeft = nearest ? daysUntil(nearest) : null;
     const urgent = daysLeft !== null && daysLeft <= 7;
@@ -473,7 +574,8 @@ function refreshPins(){
 function openModal(key, info){
   const [d,p] = key.split('-');
   document.getElementById('modalSubject').style.display = 'block';
-  document.getElementById('modalSubject').textContent = info.displaySubject + (info.cls ? ` (${info.cls}반)` : '');
+  const clsLabel = info.cls ? (info.cls==='전체' ? ' (전체)' : ` (${info.cls}반)`) : '';
+  document.getElementById('modalSubject').textContent = info.displaySubject + clsLabel;
   document.getElementById('pickFields').style.display = 'none';
   const teacherPart = info.teacher ? ` · ${info.teacher} 선생님` : '';
   const roomPart = info.room ? ` · ${info.room}` : '';
@@ -520,8 +622,9 @@ function onPickSubjectChange(preferCls){
   const subject = document.getElementById('pickSubject').value;
   const classSel = document.getElementById('pickCls');
   const classes = SCHEDULE_DATA.subjectClasses[subject] || [];
-  classSel.innerHTML = classes.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}반</option>`).join('');
-  if(preferCls && classes.includes(preferCls)) classSel.value = preferCls;
+  const options = classes.includes('전체') ? classes : [...classes, '전체'];
+  classSel.innerHTML = options.map(c=>`<option value="${escapeHtml(c)}">${c==='전체'?'전체 (모든 반)':escapeHtml(c)+'반'}</option>`).join('');
+  if(preferCls && options.includes(preferCls)) classSel.value = preferCls;
   onPickClsChange();
 }
 function onPickClsChange(){
@@ -529,14 +632,12 @@ function onPickClsChange(){
   activeCls = document.getElementById('pickCls').value;
   editingEvalId = null;
   clearForm();
-  renderEntriesList();
   renderClassmateBlock({ subject: activeSubject, cls: activeCls });
 }
 
 function prepareModalForm(){
   editingEvalId = null;
   clearForm();
-  renderEntriesList();
 }
 function clearForm(){
   document.getElementById('fContent').value = '';
@@ -558,23 +659,6 @@ function loadEntryIntoForm(entry){
   document.getElementById('modalStatus').textContent = '';
 }
 
-function renderEntriesList(){
-  const box = document.getElementById('entriesList');
-  const entries = evalsFor(activeSubject, activeCls).slice().sort((a,b)=>(a.deadline||'9999')<(b.deadline||'9999')?-1:1);
-  if(entries.length === 0){
-    box.innerHTML = '<div class="entries-empty">등록된 수행평가가 아직 없어요. 아래에 첫 항목을 입력하고 저장하세요.</div>';
-    return;
-  }
-  box.innerHTML = '<div class="hint" style="margin-bottom:6px;">📋 등록된 항목 (클릭하면 수정)</div>' + entries.map(e=>{
-    const preview = (e.content || '(내용 없음)').slice(0,24);
-    return `<div class="et-row" onclick="loadEntryIntoForm(${JSON.stringify(e).replace(/"/g,'&quot;')})">
-      <span class="et-main">${escapeHtml(preview)}</span>
-      <span class="et-date">${e.deadline ? '📅 '+e.deadline : ''}</span>
-      <button class="et-del" onclick="event.stopPropagation(); quickDelete(${e.id})">✕</button>
-    </div>`;
-  }).join('');
-}
-
 async function quickDelete(id){
   if(!confirm('이 수행평가를 삭제할까요?')) return;
   if(sb){
@@ -585,9 +669,7 @@ async function quickDelete(id){
     lsSet('evaluations', evaluationList);
   }
   await loadEvaluations();
-  renderEntriesList();
   refreshPins();
-  renderEvalTable();
   renderCalendar();
 }
 
@@ -605,11 +687,14 @@ function closeModal(){
 function renderClassmateBlock(info){
   const block = document.getElementById('classmateBlock');
   if(!info.cls){ block.style.display = 'none'; block.innerHTML=''; return; }
+  const st = currentStudent;
+  const isAll = info.cls === '전체';
   const classmates = SCHEDULE_DATA.students.filter(s=>{
-    const st = currentStudent;
-    return s.classes[info.subject] === info.cls && (!st || s.name !== st.name);
+    const enrolled = isAll ? (s.classes[info.subject] != null) : (s.classes[info.subject] === info.cls);
+    return enrolled && (!st || s.name !== st.name);
   });
-  let html = `<div class="overlap-title">👥 같은 반에서 이 수업을 듣는 친구 (${classmates.length}명)</div>`;
+  const label = isAll ? `👥 이 과목을 듣는 전체 학생 (${classmates.length}명)` : `👥 같은 반에서 이 수업을 듣는 친구 (${classmates.length}명)`;
+  let html = `<div class="overlap-title">${label}</div>`;
   if(classmates.length === 0){
     html += '<div class="overlap-empty">등록된 친구가 없어요</div>';
   } else {
@@ -652,9 +737,7 @@ async function saveNote(){
     if(!error){
       statusEl.textContent = '저장됨 ✓ (반 전체와 공유돼요)';
       await loadEvaluations();
-      renderEntriesList();
       refreshPins();
-      renderEvalTable();
       if(entry.deadline) jumpCalendarTo(entry.deadline, true); else renderCalendar();
     } else {
       statusEl.textContent = '저장 실패: ' + error.message;
@@ -671,9 +754,7 @@ async function saveNote(){
   const ok = lsSet('evaluations', evaluationList);
   if(ok){
     statusEl.textContent = '저장됨 ✓ (지금은 이 브라우저에만 — Supabase 연동 전)';
-    renderEntriesList();
     refreshPins();
-    renderEvalTable();
     if(entry.deadline) jumpCalendarTo(entry.deadline, true); else renderCalendar();
   } else { statusEl.textContent = '저장 실패, 다시 시도해주세요'; }
 }
@@ -684,41 +765,13 @@ async function loadEvaluations(){
     if(!error && data){
       evaluationList = data.map(row=>({ id: row.id, subject: row.subject, cls: row.cls, content: row.content, deadline: row.deadline, keywords: row.keywords, updatedAt: row.updated_at }));
       refreshPins();
-      renderEvalTable();
       renderCalendar();
       return;
     }
   }
   evaluationList = lsGet('evaluations') || [];
   refreshPins();
-  renderEvalTable();
   renderCalendar();
-}
-
-// ---- 수행평가 스프레드시트 표 ----
-function renderEvalTable(){
-  const el = document.getElementById('evalTable');
-  if(!el) return;
-  const rows = evaluationList.slice().sort((a,b)=>(a.deadline||'9999')<(b.deadline||'9999')?-1:1);
-  if(rows.length === 0){
-    el.innerHTML = '<tr><td class="eval-table-empty">아직 등록된 수행평가가 없어요. 위 ＋ 버튼으로 추가해보세요.</td></tr>';
-    return;
-  }
-  let html = '<tr><th>과목</th><th>분반</th><th>내용</th><th>마감일</th><th>검색어</th><th></th></tr>';
-  rows.forEach(e=>{
-    html += `<tr>
-      <td class="et-subj">${escapeHtml(e.subject)}</td>
-      <td><span class="et-cls">${escapeHtml(e.cls)}반</span></td>
-      <td class="et-content">${escapeHtml(e.content||'')}</td>
-      <td>${e.deadline||''}</td>
-      <td class="et-content">${escapeHtml(e.keywords||'')}</td>
-      <td class="et-actions">
-        <button onclick="openEvalForm({id:${e.id}})" title="수정">✎</button>
-        <button onclick="quickDelete(${e.id})" title="삭제">✕</button>
-      </td>
-    </tr>`;
-  });
-  el.innerHTML = html;
 }
 
 // ---- 수행평가 달력 ----
@@ -756,28 +809,62 @@ function renderCalendar(){
   for(let i=0;i<firstDow;i++) html += '<div class="cal-day blank"></div>';
   for(let day=1; day<=daysInMonth; day++){
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    const evalsToday = evaluationList.filter(e=>e.deadline === dateStr);
-    const newsToday = newsList.filter(n=>n.deadline === dateStr);
+    const items = dayItems(dateStr);
     const isToday = dateStr === todayStr;
-    let cell = `<div class="cal-day${isToday?' today':''}" data-date="${dateStr}"><div class="dnum">${day}</div>`;
-    let shown = 0;
-    evalsToday.forEach(e=>{
-      if(shown >= 3) return;
-      cell += `<span class="cal-chip" style="background:${colorFor(e.subject)}" onclick="openEvalForm({id:${e.id}})" title="📚 ${escapeHtml(e.subject)} ${escapeHtml(e.cls)}반">📚 ${escapeHtml(e.subject)}(${escapeHtml(e.cls)})</span>`;
-      shown++;
-    });
-    newsToday.forEach(n=>{
-      if(shown >= 3) return;
-      cell += `<span class="cal-chip contest" onclick="openNewsDetail(${JSON.stringify(String(n.id))})" title="🏆 ${escapeHtml(n.title)}">🏆 ${escapeHtml(n.title)}</span>`;
-      shown++;
-    });
-    const total = evalsToday.length + newsToday.length;
-    if(total > shown) cell += `<span class="cal-more">+${total-shown}개 더</span>`;
+    let cell = `<div class="cal-day${isToday?' today':''}${items.length?' has-items':''}" data-date="${dateStr}"${items.length?` onclick="openDayDetail('${dateStr}')"`:''}><div class="dnum">${day}</div>`;
+    if(items.length){
+      cell += '<div class="cal-dots">';
+      items.slice(0,8).forEach(it=>{
+        const shape = it.type==='quiz' ? ' quiz' : '';
+        cell += `<span class="cal-dot${shape}" style="background:${it.color}"></span>`;
+      });
+      cell += '</div>';
+      if(items.length > 8) cell += `<span class="cal-more">+${items.length-8}개</span>`;
+    }
     cell += '</div>';
     html += cell;
   }
   grid.innerHTML = html;
 }
+
+// 하루치 항목(수행평가/퀴즈/대회)을 통일된 형태로 모아줘요.
+function dayItems(dateStr){
+  const items = [];
+  evaluationList.filter(e=>e.deadline===dateStr).forEach(e=>{
+    items.push({ type:'eval', id:e.id, label:`📚 ${e.subject} (${e.cls}반)`, sub:e.content, color: colorFor(e.subject) });
+  });
+  quizList.filter(q=>q.quiz_date===dateStr).forEach(q=>{
+    items.push({ type:'quiz', id:q.id, label:`✏️ ${q.subject} 퀴즈`, sub:q.scope, color: getComputedColor('--coral') });
+  });
+  newsList.filter(n=>n.deadline===dateStr).forEach(n=>{
+    items.push({ type:'news', id:n.id, label:`🏆 ${n.title}`, sub:n.desc, color: getComputedColor('--butter') });
+  });
+  return items;
+}
+function getComputedColor(varName){
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || '#ccc';
+}
+
+function openDayDetail(dateStr){
+  const items = dayItems(dateStr);
+  document.getElementById('dayDetailTitle').textContent = dateStr;
+  const box = document.getElementById('dayDetailList');
+  if(items.length === 0){
+    box.innerHTML = '<div class="day-empty">이 날은 등록된 항목이 없어요</div>';
+  } else {
+    box.innerHTML = items.map(it=>{
+      const action = it.type==='eval' ? `openEvalForm({id:${it.id}})`
+                    : it.type==='quiz' ? `openQuizDetail(${JSON.stringify(String(it.id))})`
+                    : `openNewsDetail(${JSON.stringify(String(it.id))})`;
+      return `<div class="day-item" onclick="closeDayDetail(); ${action}">
+        <span class="di-dot" style="background:${it.color}"></span>
+        <span class="di-main">${escapeHtml(it.label)}</span>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('dayDetailOverlay').classList.add('open');
+}
+function closeDayDetail(){ document.getElementById('dayDetailOverlay').classList.remove('open'); }
 
 function openNewsDetail(id){
   const n = newsList.find(x=>String(x.id) === String(id));
@@ -1003,11 +1090,214 @@ async function loadNews(){
   renderCalendar();
 }
 
+// ---- 게시판 탭 전환 ----
+function switchBoardTab(tab){
+  activeBoardTab = tab;
+  document.querySelectorAll('.board-tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.board-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pane-'+tab).classList.add('active');
+}
+
+// ---- 퀴즈 ----
+function setupQuizForm(){
+  const sel = document.getElementById('quizSubject');
+  if(sel) sel.innerHTML = SCHEDULE_DATA.subjects.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+}
+
+async function loadQuizzes(){
+  if(sb){
+    const { data, error } = await sb.from('quizzes').select('*');
+    if(!error && data){
+      quizList = data.map(r=>({ id:r.id, subject:r.subject, quiz_date:r.quiz_date, scope:r.scope, createdAt:r.created_at }));
+      renderQuizList();
+      refreshPins();
+      renderCalendar();
+      return;
+    }
+  }
+  quizList = lsGet('quizzes') || [];
+  renderQuizList();
+  refreshPins();
+  renderCalendar();
+}
+
+async function addQuiz(){
+  const subject = document.getElementById('quizSubject').value;
+  const date = document.getElementById('quizDate').value || null;
+  const scope = document.getElementById('quizScope').value.trim();
+  const status = document.getElementById('quizStatus');
+  if(!subject){ status.textContent = '과목을 선택해주세요'; return; }
+  status.textContent = '등록 중...';
+
+  if(sb){
+    const { error } = await sb.from('quizzes').insert({ subject, quiz_date: date, scope });
+    if(!error){
+      status.textContent = '등록됨 ✓ (반 전체와 공유돼요)';
+      document.getElementById('quizDate').value='';
+      document.getElementById('quizScope').value='';
+      await loadQuizzes();
+      if(date) jumpCalendarTo(date, true);
+    } else {
+      status.textContent = '등록 실패: ' + error.message;
+    }
+    return;
+  }
+
+  quizList.push({ id: Date.now()+Math.floor(Math.random()*1000), subject, quiz_date: date, scope, createdAt: new Date().toISOString() });
+  const ok = lsSet('quizzes', quizList);
+  if(ok){
+    status.textContent = '등록됨 ✓ (지금은 이 브라우저에만 — Supabase 연동 전)';
+    document.getElementById('quizDate').value='';
+    document.getElementById('quizScope').value='';
+    renderQuizList();
+    refreshPins();
+    if(date) jumpCalendarTo(date, true); else renderCalendar();
+  } else { status.textContent = '등록 실패'; }
+}
+
+function renderQuizList(){
+  const box = document.getElementById('quizList');
+  if(!box) return;
+  const rows = quizList.slice().sort((a,b)=>(a.quiz_date||'9999')<(b.quiz_date||'9999')?-1:1);
+  if(rows.length === 0){ box.innerHTML = '<div class="quiz-empty">등록된 퀴즈가 없어요.</div>'; return; }
+  box.innerHTML = rows.map(q=>{
+    const dleft = q.quiz_date ? daysUntil(q.quiz_date) : null;
+    const urgent = dleft !== null && dleft <= 7;
+    return `<div class="quiz-item${urgent?' urgent':''}">
+      <div class="t">✏️ ${escapeHtml(q.subject)}</div>
+      <div class="d">${escapeHtml(q.scope||'')}</div>
+      <div class="meta"><span>${q.quiz_date ? '📅 '+q.quiz_date+(dleft!==null?` (D${dleft>=0?'-'+dleft:'+'+(-dleft)})`:'') : '날짜 미정'}</span><button onclick="quickDeleteQuiz(${q.id})">삭제</button></div>
+    </div>`;
+  }).join('');
+}
+
+async function quickDeleteQuiz(id){
+  if(!confirm('이 퀴즈를 삭제할까요?')) return;
+  if(sb){
+    const { error } = await sb.from('quizzes').delete().eq('id', id);
+    if(error){ alert('삭제 실패: '+error.message); return; }
+  } else {
+    quizList = quizList.filter(q=>q.id !== id);
+    lsSet('quizzes', quizList);
+  }
+  await loadQuizzes();
+}
+
+function openQuizDetail(id){
+  const q = quizList.find(x=>String(x.id) === String(id));
+  if(!q) return;
+  document.getElementById('quizDetailTitle').textContent = '✏️ ' + q.subject + ' 퀴즈';
+  document.getElementById('quizDetailMeta').textContent = q.quiz_date ? `날짜: ${q.quiz_date}` : '날짜 미정';
+  document.getElementById('quizDetailScope').textContent = q.scope || '(범위 정보 없음)';
+  document.getElementById('quizOverlay').dataset.activeId = id;
+  document.getElementById('quizOverlay').classList.add('open');
+}
+function closeQuizDetail(){ document.getElementById('quizOverlay').classList.remove('open'); }
+async function deleteQuizDetail(){
+  const id = document.getElementById('quizOverlay').dataset.activeId;
+  if(!id) return;
+  await quickDeleteQuiz(id);
+  closeQuizDetail();
+}
+
+// ---- 이번주 특별일정 / 학급 공지 (공유 텍스트 메모) ----
+async function loadNoticeBoard(id, textareaId){
+  const el = document.getElementById(textareaId);
+  if(!el) return;
+  if(sb){
+    const { data, error } = await sb.from('notice_boards').select('*').eq('id', id).maybeSingle();
+    if(!error && data){ el.value = data.content || ''; return; }
+    if(!error) { el.value = ''; return; }
+  }
+  el.value = (lsGet('notice_'+id) || {}).content || '';
+}
+async function saveNoticeBoard(id, textareaId, statusId){
+  const content = document.getElementById(textareaId).value;
+  const status = document.getElementById(statusId);
+  status.textContent = '저장 중...';
+  if(sb){
+    const { error } = await sb.from('notice_boards').upsert({ id, content, updated_at: new Date().toISOString() });
+    status.textContent = error ? '저장 실패: '+error.message : '저장됨 ✓ (반 전체와 공유돼요)';
+    return;
+  }
+  const ok = lsSet('notice_'+id, { content, updatedAt: new Date().toISOString() });
+  status.textContent = ok ? '저장됨 ✓ (지금은 이 브라우저에만 — Supabase 연동 전)' : '저장 실패';
+}
+
+// ---- 자유게시판 ----
+async function loadFreePosts(){
+  if(sb){
+    const { data, error } = await sb.from('free_posts').select('*').order('created_at', { ascending:false });
+    if(!error && data){
+      freePostList = data.map(r=>({ id:r.id, title:r.title, content:r.content, createdAt:r.created_at }));
+      renderFreePosts();
+      return;
+    }
+  }
+  freePostList = lsGet('free_posts') || [];
+  renderFreePosts();
+}
+async function addFreePost(){
+  const title = document.getElementById('freeTitle').value.trim();
+  const content = document.getElementById('freeContent').value.trim();
+  const status = document.getElementById('freeStatus');
+  if(!title){ status.textContent = '제목을 입력해주세요'; return; }
+  status.textContent = '등록 중...';
+  if(sb){
+    const { error } = await sb.from('free_posts').insert({ title, content });
+    if(!error){
+      status.textContent = '등록됨 ✓ (반 전체와 공유돼요)';
+      document.getElementById('freeTitle').value='';
+      document.getElementById('freeContent').value='';
+      await loadFreePosts();
+    } else { status.textContent = '등록 실패: '+error.message; }
+    return;
+  }
+  freePostList.unshift({ id: Date.now()+Math.floor(Math.random()*1000), title, content, createdAt: new Date().toISOString() });
+  const ok = lsSet('free_posts', freePostList);
+  if(ok){
+    status.textContent = '등록됨 ✓ (지금은 이 브라우저에만 — Supabase 연동 전)';
+    document.getElementById('freeTitle').value='';
+    document.getElementById('freeContent').value='';
+    renderFreePosts();
+  } else { status.textContent = '등록 실패'; }
+}
+async function deleteFreePost(id){
+  if(!confirm('이 글을 삭제할까요?')) return;
+  if(sb){
+    const { error } = await sb.from('free_posts').delete().eq('id', id);
+    if(error){ alert('삭제 실패: '+error.message); return; }
+  } else {
+    freePostList = freePostList.filter(p=>p.id !== id);
+    lsSet('free_posts', freePostList);
+  }
+  await loadFreePosts();
+}
+function renderFreePosts(){
+  const box = document.getElementById('freeList');
+  if(!box) return;
+  if(freePostList.length === 0){ box.innerHTML = '<div class="free-empty">아직 글이 없어요. 첫 글을 남겨보세요.</div>'; return; }
+  box.innerHTML = freePostList.map(p=>{
+    const dateLabel = new Date(p.createdAt).toLocaleString('ko-KR');
+    return `<div class="free-post">
+      <div class="t">${escapeHtml(p.title)}</div>
+      <div class="d">${escapeHtml(p.content||'')}</div>
+      <div class="meta"><span>${dateLabel}</span><button onclick="deleteFreePost(${JSON.stringify(p.id)})">삭제</button></div>
+    </div>`;
+  }).join('');
+}
+
 // ---- init ----
 buildSubjectColorMap();
 setupStudentList();
+setupQuizForm();
+switchBoardTab('quiz');
 loadEvaluations();
+loadQuizzes();
 loadNews();
+loadFreePosts();
+loadNoticeBoard('week_special','weekNoticeText');
+loadNoticeBoard('class_notice','classNoticeText');
 buildGrid();
 </script>
 </body>
