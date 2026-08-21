@@ -489,6 +489,8 @@ function setupStudentList(){
   dl.innerHTML = SCHEDULE_DATA.students.map(s=>`<option value="${s.name}">`).join('');
 }
 
+let lastLoggedStudent = null;
+
 function onStudentPick(){
   const val = document.getElementById('studentSearch').value.trim();
   const stu = studentByName(val);
@@ -499,12 +501,22 @@ function onStudentPick(){
     chip.style.display='inline-block';
     chip.textContent = '학번 ' + stu.sid;
     pdfBtn.disabled = false;
+    logVisit(stu.name);
   } else {
     currentStudent = null;
     chip.style.display='none';
     pdfBtn.disabled = true;
   }
   buildGrid();
+}
+
+async function logVisit(name){
+  if(!sb) return;              // Supabase 연동 전에는 기록하지 않아요
+  if(name === lastLoggedStudent) return;  // 같은 학생을 연속으로 다시 눌러도 중복 기록 안 함
+  lastLoggedStudent = name;
+  try{
+    await sb.from('visit_log').insert({ student_name: name });
+  }catch(e){ /* 방문 기록 실패는 조용히 무시 — 시간표 사용 자체에는 영향 없게 */ }
 }
 
 function exportTimetablePDF(){
